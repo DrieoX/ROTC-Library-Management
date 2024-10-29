@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Book;
-use App\Models\Request;
+use App\Models\Requests;
 use Illuminate\Http\Request as HttpRequest;
 use Illuminate\Support\Facades\Auth;
 
@@ -22,7 +22,7 @@ class RequestController extends Controller
         }
 
         // Create the request
-        Request::create([
+        Requests::create([
             'student_id' => Auth::id(), // Authenticated user making the request
             'book_id' => $bookId,
             'status' => 'pending', // Initial status is pending
@@ -36,7 +36,7 @@ class RequestController extends Controller
      */
     public function approve($requestId)
     {
-        $request = Request::findOrFail($requestId);
+        $request = Requests::findOrFail($requestId);
         $request->status = 'approved';
         $request->save();
 
@@ -53,7 +53,7 @@ class RequestController extends Controller
      */
     public function deny($requestId)
     {
-        $request = Request::findOrFail($requestId);
+        $request = Requests::findOrFail($requestId);
         $request->status = 'denied';
         $request->save();
 
@@ -66,7 +66,7 @@ class RequestController extends Controller
     public function index()
     {
         // Get all pending requests for librarians to approve/deny
-        $requests = Request::where('status', 'pending')->get();
+        $requests = Requests::where('status', 'pending')->get();
 
         return view('requests.index', compact('requests'));
     }

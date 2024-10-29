@@ -14,6 +14,7 @@
             display: flex;
             flex-direction: column;
             min-height: 100vh;
+            overflow-x: hidden; /* Prevent horizontal scroll */
         }
 
         .navbar {
@@ -23,12 +24,14 @@
             padding: 10px 20px;
             background-color: #005f0f;
             color: white;
+            flex-wrap: wrap; /* Allow wrapping for smaller screens */
         }
 
         .navbar .nav-links {
             display: flex;
             justify-content: center;
             flex-grow: 1;
+            flex-wrap: wrap; /* Allow wrapping for smaller screens */
         }
 
         .navbar a {
@@ -36,6 +39,7 @@
             text-decoration: none;
             padding: 10px 15px;
             transition: background-color 0.3s;
+            white-space: nowrap; /* Prevent link text from wrapping */
         }
 
         .navbar a:hover {
@@ -58,10 +62,14 @@
             justify-content: center;
             align-items: center;
             padding: 20px;
+            width: 100%; /* Allow full width */
+            max-width: 1200px; /* Add a max width for larger screens */
+            margin: 0 auto; /* Center container */
         }
 
         h1, h2 {
             color: #B8860B;
+            text-align: center; /* Center align headings */
         }
 
         .button {
@@ -85,16 +93,15 @@
             left: 50%;
             transform: translate(-50%, -50%);
             width: 90%;
-            width: 1800px;
-            max-width: 2000px;
+            max-width: 600px; /* Max width for modals */
             background-color: white;
             padding: 20px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             border-radius: 8px;
             z-index: 1000;
             overflow-y: auto;
-            height: 80vh;
-            max-height: 90vh;
+            height: auto; /* Let height be automatic */
+            max-height: 80vh; /* Limit max height */
             display: none;
         }
 
@@ -116,6 +123,35 @@
             font-size: 1.5rem;
             color: #888;
             cursor: pointer;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column; /* Stack navbar items vertically on small screens */
+                align-items: flex-start; /* Align items to the start */
+            }
+
+            .navbar a {
+                width: 100%; /* Make links full width */
+                text-align: center; /* Center align text */
+                padding: 10px 0; /* More vertical padding */
+            }
+        }
+
+        @media (max-width: 480px) {
+            .navbar {
+                padding: 5px 10px; /* Reduce padding for small screens */
+            }
+
+            h1, h2 {
+                font-size: 1.5rem; /* Smaller headings */
+            }
+
+            .button {
+                width: 100%; /* Make buttons full width */
+                padding: 8px; /* Reduce padding */
+            }
         }
     </style>
 </head>

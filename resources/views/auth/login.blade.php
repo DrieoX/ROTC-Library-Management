@@ -20,7 +20,7 @@
             <input type="password" id="password" name="password" class="form-input w-full border-gray-300 rounded px-3 py-2" required>
         </div>
 
-        <button type="submit" class="w-full py-2 mt-4 bg-blue-500 text-white font-semibold rounded hover:bg-blue-600">Login</button>
+        <button type="submit" class="w-full py-2 mt-4 bg-blue-500 text-black font-semibold rounded hover:bg-blue-600">Login</button>
     </form>
 </div>
 @endsection

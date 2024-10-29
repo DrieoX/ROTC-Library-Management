@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Student;
+use App\Models\Requests;
+use App\Models\Book;
 use App\Models\Librarian;
 
 class DashboardController extends Controller
@@ -26,8 +28,12 @@ class DashboardController extends Controller
     public function librarianIndex()
     {
         $librarian = auth()->user()->librarian;
+        $books = Book::all();
         // Here, you can fetch librarian-specific data as needed
 
-        return view('librarian.welcome', compact('librarian'));
+        $ongoingBorrowedCount = Requests::where('status', 'ongoing')->count();
+        $requestedBooksCount = Requests::where('status', 'requested')->count();
+
+        return view('librarian.dashboard', compact('books', 'librarian','ongoingBorrowedCount', 'requestedBooksCount'));
     }
 }

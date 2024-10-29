@@ -86,7 +86,7 @@
         </div>
         <div class="auth-buttons">
             @auth
-                <a href="{{ route('dashboard') }}" class="button">Dashboard</a>
+                <a href="{{ route('librarian.dashboard') }}" class="button">Dashboard</a>
                 <form method="POST" action="{{ route('logout') }}" style="display: inline;">
                     @csrf
                     <button type="submit" class="button">Logout</button>
