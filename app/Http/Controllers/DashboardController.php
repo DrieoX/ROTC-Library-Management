@@ -28,6 +28,6 @@ class DashboardController extends Controller
         $librarian = auth()->user()->librarian;
         // Here, you can fetch librarian-specific data as needed
 
-        return view('librarian.dashboard', compact('librarian'));
+        return view('librarian.welcome', compact('librarian'));
     }
 }

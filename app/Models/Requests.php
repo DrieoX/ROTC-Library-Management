@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Request extends Model
+class Requests extends Model
 {
     public function book()
 {
@@ -15,5 +15,7 @@ class Request extends Model
 {
     return $this->belongsTo(User::class, 'student_id');
 }
+
+protected $table = 'requests';
 
 }

@@ -13,9 +13,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
-Route::get('librarian/', function () {
-    return view('librarian.welcome');
-});
+Route::get('librarian/', [BookController::class, 'index'])->name('librarian.welcome');
 
 // Dashboard route for regular users (requires authentication)
 Route::get('/dashboard', [DashboardController::class, 'index'])

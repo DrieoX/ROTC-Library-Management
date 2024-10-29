@@ -35,8 +35,6 @@ class LoginController extends Controller
                 return redirect()->intended('/librarian');
             }
 
-            // Default to standard user dashboard
-            return redirect()->intended('/');
         }
 
         // If authentication fails, redirect back with errors
