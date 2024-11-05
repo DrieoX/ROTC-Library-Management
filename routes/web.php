@@ -59,3 +59,9 @@ Route::middleware(['auth'])->group(function () {
 
 // Book search route
 Route::post('/search-books', [BookController::class, 'searchBooks'])->name('search-books');
+Route::get('/books/create', [BookController::class, 'create'])->name('books.create');
+Route::post('/books', [BookController::class, 'store'])->name('books.store');
+Route::resource('books', BookController::class);
+Route::resource('books', BookController::class);
+
+

@@ -9,7 +9,8 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
+            background: url('images/background.jpg') no-repeat center center fixed;
+            background-size: cover;
             margin: 0;
             display: flex;
             flex-direction: column;
@@ -22,7 +23,7 @@
             justify-content: space-between;
             align-items: center;
             padding: 10px 20px;
-            background-color: #005f0f;
+            background-color: rgba(0, 95, 15, 0.8); /* Transparent green */
             color: white;
             flex-wrap: wrap; /* Allow wrapping for smaller screens */
         }
@@ -48,7 +49,7 @@
         }
 
         .footer {
-            background-color: #003300;
+            background-color: rgba(0, 51, 0, 0.8); /* Transparent dark green */
             color: white;
             text-align: center;
             padding: 10px 0;
@@ -65,11 +66,6 @@
             width: 100%; /* Allow full width */
             max-width: 1200px; /* Add a max width for larger screens */
             margin: 0 auto; /* Center container */
-        }
-
-        h1, h2 {
-            color: #B8860B;
-            text-align: center; /* Center align headings */
         }
 
         .button {
@@ -168,7 +164,7 @@
             @auth
                 <a href="#" onclick="toggleModal('achievementsModal')" class="button">Achievements</a>
             @else
-                <a href="{{ route('login') }}" class="button">Login to View Achievements</a>
+                <a href="{{ route('login') }}" class="button">Login</a>
             @endauth
         </nav>
         <div class="auth-buttons">
@@ -247,70 +243,36 @@
     </div>
 
     <!-- Scripts -->
-    <script>
-        // Toggle modal functionality
-        function toggleModal(modalId) {
-            // Close all modals
-            const modals = document.querySelectorAll('.custom-modal');
-            modals.forEach(modal => {
-                modal.classList.remove('active');
-            });
-            
-            // Open the clicked modal
-            const modal = document.getElementById(modalId);
-            modal.classList.toggle('active');
+    <!-- Scripts -->
+<script>
+    // Toggle modal functionality
+    function toggleModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal.classList.contains('active')) {
+            // If modal is open, close it
+            modal.classList.remove('active');
+        } else {
+            // Close any other open modals before opening the new one
+            document.querySelectorAll('.custom-modal').forEach(m => m.classList.remove('active'));
+            // Open the selected modal
+            modal.classList.add('active');
         }
+    }
 
-        // Retain book modal state and search functionality
-        document.getElementById('bookFilterForm').addEventListener('submit', function(e) {
-            e.preventDefault(); // Prevent the form from submitting and reloading the page
-
-            const searchQuery = document.getElementById('bookSearch').value;
-            const genre = document.getElementById('genreFilter').value;
-
-            // Make an AJAX request to search for books (use your Laravel route here)
-            fetch('/search-books', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}' // Include CSRF token
-                },
-                body: JSON.stringify({
-                    search: searchQuery,
-                    genre: genre
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                // Render the search results in the #bookResults div
-                const bookResultsDiv = document.getElementById('bookResults');
-                bookResultsDiv.innerHTML = ''; // Clear previous results
-
-                if (data.length > 0) {
-                    data.forEach(book => {
-                        const bookItem = document.createElement('div');
-                        bookItem.textContent = `${book.title} by ${book.author}`;
-                        bookResultsDiv.appendChild(bookItem);
-                    });
-                } else {
-                    bookResultsDiv.textContent = 'No books found.';
-                }
-            })
-            .catch(error => console.error('Error:', error));
+    // Close modal when clicking outside of it
+    window.onclick = function(event) {
+        const modals = document.querySelectorAll('.custom-modal');
+        modals.forEach(modal => {
+            if (event.target === modal) {
+                modal.classList.remove('active');
+            }
         });
+    };
 
-        // Handle "Home" navigation without page refresh
-        function navigateToHome() {
-            // Close all modals
-            const modals = document.querySelectorAll('.custom-modal');
-            modals.forEach(modal => {
-                modal.classList.remove('active');
-            });
-
-            // You can add any other logic to refresh content without reloading the page here
-            // e.g., if you need to fetch home page content dynamically, use AJAX here
-            console.log('Navigated to Home.');
-        }
-    </script>
+    // Example homepage navigation function
+    function navigateToHome() {
+        window.location.href = '/';
+    }
+</script>
 </body>
 </html>

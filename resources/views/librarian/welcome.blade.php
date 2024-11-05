@@ -3,9 +3,6 @@
 @section('title', 'Welcome')
 
 @section('content')
-    <h1>Welcome to the ROTC Library Management System</h1>
-    <p>Your gateway to knowledge and resources.</p>
-
     <div style="margin-bottom: 30px;">
         <h2>Available Books</h2>
         <table style="width: 100%; border-collapse: separate; border-spacing: 15px 20px;">
@@ -17,6 +14,7 @@
                     <th style="text-align: left;">ISBN</th>
                     <th style="text-align: left;">Quantity</th>
                     <th style="text-align: left;">Borrowed</th>
+                    <th style="text-align: left;">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -37,6 +35,10 @@
                 @endforeach
             </tbody>
         </table>
+    </div>
+
+    <div style="text-align: right; margin-top: 20px;">
+        <a href="{{ route('books.create') }}" class="button" style="padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px;">Add New Book</a>
     </div>
 
     <div style="margin-top: 40px;">
