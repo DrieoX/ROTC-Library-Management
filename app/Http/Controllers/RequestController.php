@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Book;
+use App\Models\BookCopy;
 use App\Models\Requests;
 use Illuminate\Http\Request as HttpRequest;
 use Illuminate\Support\Facades\Auth;
@@ -16,49 +17,72 @@ class RequestController extends Controller
     {
         $book = Book::findOrFail($bookId);
 
-        // Ensure the book is available
-        if (!$book->available) {
-            return redirect()->back()->with('error', 'This book is not available for borrowing.');
+        // Find an available book copy (only one available copy)
+        $bookCopy = BookCopy::where('book_id', $bookId)
+                            ->where('available', true)
+                            ->first();
+
+        if (!$bookCopy) {
+            return redirect()->back()->with('error', 'No available copies of this book.');
+        }
+
+        // Check if the user has already requested this book
+        $existingRequest = Requests::where('student_id', Auth::id())
+                                   ->where('book_copy_id', $bookCopy->id)
+                                   ->first();
+
+        if ($existingRequest) {
+            return redirect()->back()->with('error', 'You have already requested this book.');
         }
 
         // Create the request
         Requests::create([
             'student_id' => Auth::id(), // Authenticated user making the request
-            'book_id' => $bookId,
+            'book_copy_id' => $bookCopy->id, // Store the book copy ID in the request
             'status' => 'pending', // Initial status is pending
         ]);
 
-        return redirect()->route('books.index')->with('success', 'Your request has been submitted.');
+        return redirect()->route('books.list')->with('success', 'Your request has been submitted.');
     }
 
     /**
      * Approve a book borrowing request (Librarian only).
      */
     public function approve($requestId)
-    {
-        $request = Requests::findOrFail($requestId);
-        $request->status = 'approved';
-        $request->save();
+{
+    $request = Requests::findOrFail($requestId);
 
-        // Update the book's availability
-        $book = Book::findOrFail($request->book_id);
-        $book->available = false;
-        $book->save();
-
-        return redirect()->route('requests.index')->with('success', 'Request has been approved.');
+    // Ensure the request is still pending
+    if ($request->status !== 'pending') {
+        return redirect()->back()->with('error', 'Request is no longer pending.');
     }
 
-    /**
-     * Deny a book borrowing request (Librarian only).
-     */
-    public function deny($requestId)
-    {
-        $request = Requests::findOrFail($requestId);
-        $request->status = 'denied';
-        $request->save();
+    $request->status = 'approved';
+    $request->save();
 
-        return redirect()->route('requests.index')->with('error', 'Request has been denied.');
+    // Mark the book copy as unavailable
+    $bookCopy = BookCopy::findOrFail($request->book_copy_id);
+    $bookCopy->available = false;
+    $bookCopy->save();
+
+    return redirect()->route('requests.list')->with('success', 'Request approved successfully.');
+}
+
+public function deny($requestId)
+{
+    $request = Requests::findOrFail($requestId);
+
+    // Ensure the request is still pending
+    if ($request->status !== 'pending') {
+        return redirect()->back()->with('error', 'Request is no longer pending.');
     }
+
+    $request->status = 'denied';
+    $request->save();
+
+    return redirect()->route('requests.list')->with('success', 'Request denied successfully.');
+}
+
 
     /**
      * Display a listing of requests for librarians.
@@ -70,4 +94,30 @@ class RequestController extends Controller
 
         return view('requests.index', compact('requests'));
     }
+
+    public function listRequests()
+    {
+        $requests = Requests::with(['bookCopy.book', 'student'])
+            ->where('status', 'pending')
+            ->get()
+            ->groupBy('bookCopy.book_id'); // Group requests by book ID for sorting
+
+        return view('librarian.requested_books', compact('requests'));
+    }
+
+
+    public function stats()
+    {
+        $totalRequested = Requests::where('status', 'pending')->count();
+        $totalBorrowed = Requests::where('status', 'approved')->count();
+
+        return response()->json([
+            'requested' => $totalRequested,
+            'borrowed' => $totalBorrowed,
+        ]);
+    }
+
+    
+
+
 }

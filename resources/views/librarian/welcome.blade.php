@@ -1,48 +1,110 @@
 @extends('layouts.librarian')
 
-@section('title', 'Welcome')
-
 @section('content')
-    <div style="margin-bottom: 30px;">
-        <h2>Available Books</h2>
-        <table style="width: 100%; border-collapse: separate; border-spacing: 15px 20px;">
+<div class="container">
+    <h1>Welcome, Librarian</h1>
+
+    <!-- Live Stats Section -->
+    <div class="stats">
+        <h3>Live Stats</h3>
+        <p>Ongoing Borrowed Books: <span id="borrowed-count">{{ $ongoingBorrowedCount }}</span></p>
+        <p>Requested Books: <span id="requested-count">{{ $requestedBooksCount }}</span></p>
+    </div>
+
+    <!-- Book Management Section -->
+    <div class="book-management">
+        <h3>Manage Books</h3>
+        <a href="{{ route('books.create') }}" class="btn btn-primary">Add New Book</a>
+
+        <table class="table mt-3">
             <thead>
                 <tr>
-                    <th style="text-align: left;">Cover</th>
-                    <th style="text-align: left;">Title</th>
-                    <th style="text-align: left;">Author</th>
-                    <th style="text-align: left;">ISBN</th>
-                    <th style="text-align: left;">Quantity</th>
-                    <th style="text-align: left;">Borrowed</th>
-                    <th style="text-align: left;">Actions</th>
+                    <th>Title</th>
+                    <th>Author</th>
+                    <th>Copies</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach ($books as $book)
                     <tr>
-                        <td>
-                            <img src="{{ asset('storage/covers/' . $book->cover_image) }}" alt="Cover Image" style="width: 60px; height: 90px; object-fit: cover;">
-                        </td>
                         <td>{{ $book->title }}</td>
                         <td>{{ $book->author }}</td>
-                        <td>{{ $book->isbn }}</td>
-                        <td>{{ $book->quantity }}</td>
-                        <td>{{ $book->borrowed_count }}</td>
+                        <td>{{ $book->copies->count() }}</td>
                         <td>
-                            <a href="{{ route('books.edit', $book->id) }}" class="button">Edit</a>
+                            <a href="{{ route('books.edit', $book->id) }}" class="btn btn-warning">Edit</a>
+                            <form action="{{ route('books.destroy', $book->id) }}" method="POST" style="display:inline;">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-danger">Delete</button>
+                            </form>
                         </td>
                     </tr>
                 @endforeach
             </tbody>
         </table>
+
+        <!-- Pagination -->
+        {{ $books->links() }}
     </div>
 
-    <div style="text-align: right; margin-top: 20px;">
-        <a href="{{ route('books.create') }}" class="button" style="padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px;">Add New Book</a>
-    </div>
+    <!-- Requested Books Section -->
+    <div class="requested-books mt-5">
+        <h3>Requested Books</h3>
+        
+        @foreach ($requests->groupBy('bookCopy.book_id') as $bookId => $bookRequests)
+            <h4>{{ $bookRequests->first()->bookCopy->book->title }}</h4> <!-- Group by book -->
 
-    <div style="margin-top: 40px;">
-        <h3>Ongoing Borrowed Books: {{ $ongoingBorrowedCount }}</h3>
-        <h3>Requested Books: {{ $requestedBooksCount }}</h3>
+            <table class="table mt-3">
+                <thead>
+                    <tr>
+                        <th>ISBN</th>
+                        <th>Requested By</th>
+                        <th>Status</th>
+                        <th>Request Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($bookRequests as $request)
+                        <tr>
+                            <td>{{ $request->bookCopy->isbn }}</td>
+                            <td>{{ $request->student->name }}</td>
+                            <td>{{ ucfirst($request->status) }}</td>
+                            <td>{{ $request->created_at->format('Y-m-d H:i:s') }}</td>
+                            <td>
+                                @if ($request->status === 'pending')
+                                    <form action="{{ route('requests.approve', $request->id) }}" method="POST" style="display: inline;">
+                                        @csrf
+                                        <button class="btn btn-success" type="submit">Approve</button>
+                                    </form>
+                                    <form action="{{ route('requests.deny', $request->id) }}" method="POST" style="display: inline;">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button class="btn btn-danger" type="submit">Deny</button>
+                                    </form>
+                                @else
+                                    <span class="text-muted">No actions available</span>
+                                @endif
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @endforeach
     </div>
+</div>
+
+<script>
+    // Optionally add dynamic refresh functionality using AJAX
+    setInterval(() => {
+        fetch('{{ route("requests.stats") }}')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('borrowed-count').textContent = data.borrowed;
+                document.getElementById('requested-count').textContent = data.requested;
+            })
+            .catch(error => console.error('Error fetching stats:', error));
+    }, 5000); // Refresh every 5 seconds
+</script>
 @endsection

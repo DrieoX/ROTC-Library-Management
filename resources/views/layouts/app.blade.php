@@ -9,13 +9,13 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background: url('images/background.jpg') no-repeat center center fixed;
+            background: url('{{ asset('images/background.jpg') }}') no-repeat center center fixed;
             background-size: cover;
             margin: 0;
             display: flex;
             flex-direction: column;
             min-height: 100vh;
-            overflow-x: hidden; /* Prevent horizontal scroll */
+            overflow-x: hidden;
         }
 
         .navbar {
@@ -23,33 +23,52 @@
             justify-content: space-between;
             align-items: center;
             padding: 10px 20px;
-            background-color: rgba(0, 95, 15, 0.8); /* Transparent green */
+            background-color: rgba(0, 0, 0, 0.8);
             color: white;
-            flex-wrap: wrap; /* Allow wrapping for smaller screens */
+            position: relative;
         }
 
-        .navbar .nav-links {
+        .logo {
+            position: absolute;
+            top: -30px;
+            left: 20px;
+            z-index: 2;
+        }
+
+        .logo img {
+            height: 120px;
+            width: auto;
+        }
+
+        .nav-links {
             display: flex;
             justify-content: center;
             flex-grow: 1;
-            flex-wrap: wrap; /* Allow wrapping for smaller screens */
+            flex-wrap: wrap;
         }
 
-        .navbar a {
+        .nav-links a {
             color: white;
             text-decoration: none;
             padding: 10px 15px;
             transition: background-color 0.3s;
-            white-space: nowrap; /* Prevent link text from wrapping */
+            white-space: nowrap;
         }
 
-        .navbar a:hover {
+        .nav-links a:hover {
             background-color: #00440a;
             border-radius: 5px;
         }
 
+        .auth-buttons a.button:hover, 
+        .auth-buttons button.button:hover {
+            background-color: green;
+            color: white !important;
+            text-decoration: none;
+        }
+
         .footer {
-            background-color: rgba(0, 51, 0, 0.8); /* Transparent dark green */
+            background-color: rgba(0, 0, 0, 0.8);
             color: white;
             text-align: center;
             padding: 10px 0;
@@ -63,9 +82,9 @@
             justify-content: center;
             align-items: center;
             padding: 20px;
-            width: 100%; /* Allow full width */
-            max-width: 1200px; /* Add a max width for larger screens */
-            margin: 0 auto; /* Center container */
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
         }
 
         .button {
@@ -79,7 +98,7 @@
         }
 
         .button:hover {
-            background-color: #660000;
+            background-color: green;
         }
 
         /* Custom modal styling */
@@ -89,15 +108,13 @@
             left: 50%;
             transform: translate(-50%, -50%);
             width: 90%;
-            max-width: 600px; /* Max width for modals */
+            max-width: 600px;
             background-color: white;
             padding: 20px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             border-radius: 8px;
             z-index: 1000;
             overflow-y: auto;
-            height: auto; /* Let height be automatic */
-            max-height: 80vh; /* Limit max height */
             display: none;
         }
 
@@ -121,48 +138,92 @@
             cursor: pointer;
         }
 
-        /* Responsive adjustments */
         @media (max-width: 768px) {
             .navbar {
-                flex-direction: column; /* Stack navbar items vertically on small screens */
-                align-items: flex-start; /* Align items to the start */
+                flex-direction: column;
+                align-items: flex-start;
             }
 
-            .navbar a {
-                width: 100%; /* Make links full width */
-                text-align: center; /* Center align text */
-                padding: 10px 0; /* More vertical padding */
+            .nav-links a {
+                width: 100%;
+                text-align: center;
+                padding: 10px 0;
             }
         }
 
         @media (max-width: 480px) {
             .navbar {
-                padding: 5px 10px; /* Reduce padding for small screens */
+                padding: 5px 10px;
             }
 
             h1, h2 {
-                font-size: 1.5rem; /* Smaller headings */
+                font-size: 1.5rem;
             }
 
             .button {
-                width: 100%; /* Make buttons full width */
-                padding: 8px; /* Reduce padding */
+                width: 100%;
+                padding: 8px;
             }
         }
+
+        /* Book Listing Styles */
+        .book-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .book-item {
+            background-color: rgba(255, 255, 255, 0.8); /* Transparent white background */
+            color: black; /* Black font color */
+            padding: 20px;
+            border-radius: 8px; /* Rounded corners */
+            width: 250px; /* Adjust width as necessary */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Optional: add shadow for better contrast */
+        }
+
+        .book-item h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .book-item p {
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .pagination {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .pagination a {
+            text-decoration: none;
+            color: #007bff;
+        }
+
+        .pagination a:hover {
+            text-decoration: underline;
+        }
+
+        .pagination .active {
+            font-weight: bold;
+        }
+
     </style>
 </head>
 <body>
     <header class="navbar">
         <div class="logo">
-            <h2>ROTC Library</h2>
+            <img src="{{ asset('images/logo.png') }}" alt="ROTC Library Logo">
         </div>
         <nav class="nav-links">
-            <a href="#" onclick="navigateToHome()">Home</a>
-            <a href="#" onclick="toggleModal('aboutModal')">About</a>
-            <a href="#" onclick="toggleModal('booksModal')">Books</a>
-            <a href="#" onclick="toggleModal('updatesModal')">Updates</a>
+            <a href="{{ url('/') }}">Home</a>
+            <a href="{{ url('#') }}" onclick="toggleModal('aboutModal')">About</a>
+            <a href="{{ route('books.list') }}">Books</a>
+            <a href="{{ url('#') }}" onclick="toggleModal('updatesModal')">Updates</a>
             @auth
-                <a href="#" onclick="toggleModal('achievementsModal')" class="button">Achievements</a>
+                <a href="{{ url('#') }}" onclick="toggleModal('achievementsModal')" class="button">Achievements</a>
             @else
                 <a href="{{ route('login') }}" class="button">Login</a>
             @endauth
@@ -175,8 +236,8 @@
                     <button type="submit" class="button">Logout</button>
                 </form>
             @else
-                <a href="/login" class="button">Login</a>
-                <a href="/register/student" class="button">Register</a>
+                <a href="{{ route('login') }}" class="button">Login</a>
+                <a href="{{ route('register-student') }}" class="button">Register</a>
             @endauth
         </div>
     </header>
@@ -189,7 +250,7 @@
         <p>&copy; 2024 ROTC Library Management System. All rights reserved.</p>
     </footer>
 
-    <!-- Custom Modals -->
+    <!-- Modals -->
     <div id="aboutModal" class="custom-modal">
         <div class="custom-modal-header">
             <h5>About</h5>
@@ -197,28 +258,6 @@
         </div>
         <div class="modal-body">
             @include('modals.about')
-        </div>
-    </div>
-
-    <div id="booksModal" class="custom-modal">
-        <div class="custom-modal-header">
-            <h5>Books</h5>
-            <button class="close-btn" onclick="toggleModal('booksModal')">&times;</button>
-        </div>
-        <div class="modal-body">
-            <form id="bookFilterForm">
-                <input type="text" id="bookSearch" name="bookSearch" placeholder="Search by title..." />
-                <select id="genreFilter" name="genre">
-                    <option value="">All Genres</option>
-                    <option value="fiction">Fiction</option>
-                    <option value="non-fiction">Non-fiction</option>
-                    <!-- More genres -->
-                </select>
-                <button type="submit" class="button">Search</button>
-            </form>
-            <div id="bookResults">
-                <!-- Book results will be rendered here -->
-            </div>
         </div>
     </div>
 
@@ -242,37 +281,23 @@
         </div>
     </div>
 
-    <!-- Scripts -->
-    <!-- Scripts -->
-<script>
-    // Toggle modal functionality
-    function toggleModal(modalId) {
-        const modal = document.getElementById(modalId);
-        if (modal.classList.contains('active')) {
-            // If modal is open, close it
-            modal.classList.remove('active');
-        } else {
-            // Close any other open modals before opening the new one
-            document.querySelectorAll('.custom-modal').forEach(m => m.classList.remove('active'));
-            // Open the selected modal
-            modal.classList.add('active');
+    <script>
+        function toggleModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.toggle('active');
         }
-    }
 
-    // Close modal when clicking outside of it
-    window.onclick = function(event) {
-        const modals = document.querySelectorAll('.custom-modal');
-        modals.forEach(modal => {
-            if (event.target === modal) {
-                modal.classList.remove('active');
-            }
-        });
-    };
+        window.onclick = function(event) {
+            document.querySelectorAll('.custom-modal').forEach(modal => {
+                if (event.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        };
 
-    // Example homepage navigation function
-    function navigateToHome() {
-        window.location.href = '/';
-    }
-</script>
+        function navigateToHome() {
+            window.location.href = '/';
+        }
+    </script>
 </body>
 </html>

@@ -3,22 +3,31 @@
 namespace App\Http\Controllers;
 
 use App\Models\Book;
-use App\Models\Requests; // Assuming Requests is the model for borrowing transactions
+use App\Models\BookCopy;
+use App\Models\Requests; // Correct model for handling requests
 use Illuminate\Http\Request;
 
 class BookController extends Controller
 {
     /**
-     * Display a listing of books with ongoing and requested borrow counts.
+     * Display a listing of the books for librarians to manage.
      */
     public function index()
     {
-        $books = Book::all();
+        // Fetch all books with their associated copies
+        $books = Book::with('copies')->paginate(10);
 
-        $ongoingBorrowedCount = Requests::where('status', 'ongoing')->count();
-        $requestedBooksCount = Requests::where('status', 'requested')->count();
+        // Calculate the counts for live stats
+        $ongoingBorrowedCount = Requests::where('status', 'borrowed')->count();
+        $requestedBooksCount = Requests::where('status', 'pending')->count();
 
-        return view('librarian.welcome', compact('books', 'ongoingBorrowedCount', 'requestedBooksCount'));
+        // Fetch all requests (pending and borrowed)
+        $requests = Requests::with(['bookCopy.book', 'student']) // Eager load relationships
+                            ->whereIn('status', ['pending', 'borrowed']) // Fetch requests that are pending or borrowed
+                            ->get();
+
+        // Pass all data to the librarian's welcome view
+        return view('librarian.welcome', compact('books', 'ongoingBorrowedCount', 'requestedBooksCount', 'requests'));
     }
 
     /**
@@ -26,7 +35,7 @@ class BookController extends Controller
      */
     public function create()
     {
-        return view('books.create'); // Create a view file for the book creation form
+        return view('books.create'); // Change this to the correct blade file for adding a book
     }
 
     /**
@@ -38,36 +47,27 @@ class BookController extends Controller
             'title' => 'required|string|max:255',
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'author' => 'required|string|max:255',
-            'isbn' => 'required|string|unique:books|max:13', // Validate ISBN uniqueness
+            'isbn' => 'required|string|unique:book_copies|max:13',
             'quantity' => 'required|integer|min:1',
         ]);
 
-        // Handle the cover image upload if provided
-        $coverImagePath = null;
-        if ($request->hasFile('cover_image')) {
-            $coverImagePath = $request->file('cover_image')->store('covers', 'public');
-        }
-
-        Book::create([
+        // Create the main book record
+        $book = Book::create([
             'title' => $request->input('title'),
-            'cover_image' => $coverImagePath,
+            'cover_image' => $request->hasFile('cover_image') ? $request->file('cover_image')->store('covers', 'public') : null,
             'author' => $request->input('author'),
-            'isbn' => $request->input('isbn'),
-            'quantity' => $request->input('quantity'),
         ]);
 
-        return redirect()->route('books.index')->with('success', 'Book added successfully!');
-    }
+        // Add book copies
+        for ($i = 0; $i < $request->input('quantity'); $i++) {
+            BookCopy::create([
+                'book_id' => $book->id,
+                'isbn' => $request->input('isbn'),
+                'available' => true, // All new copies are available by default
+            ]);
+        }
 
-    /**
-     * Display a specific book's details.
-     */
-    public function show($id)
-    {
-        // Retrieve a specific book by its ID
-        $book = Book::findOrFail($id);
-
-        return view('books.show', compact('book'));
+        return redirect()->route('librarian.welcome')->with('success', 'Book added successfully!');
     }
 
     /**
@@ -76,7 +76,7 @@ class BookController extends Controller
     public function edit($id)
     {
         $book = Book::findOrFail($id);
-        return view('books.edit', compact('book')); // Create a view file for the book edit form
+        return view('books.edit', compact('book')); // Change this to the correct blade file for editing a book
     }
 
     /**
@@ -88,19 +88,15 @@ class BookController extends Controller
             'title' => 'required|string|max:255',
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'author' => 'required|string|max:255',
-            'isbn' => 'required|string|max:13|unique:books,isbn,' . $id, // Exclude current book from uniqueness check
+            'isbn' => 'required|string|max:13|unique:book_copies,isbn,' . $id . ',book_id',
             'quantity' => 'required|integer|min:1',
         ]);
 
         $book = Book::findOrFail($id);
 
-        // Handle the cover image upload if provided
-        $coverImagePath = $book->cover_image; // Keep the existing image if none is uploaded
+        // Update the main book record
+        $coverImagePath = $book->cover_image;
         if ($request->hasFile('cover_image')) {
-            // Delete old image if necessary
-            if ($coverImagePath) {
-                \Storage::disk('public')->delete($coverImagePath);
-            }
             $coverImagePath = $request->file('cover_image')->store('covers', 'public');
         }
 
@@ -108,27 +104,39 @@ class BookController extends Controller
             'title' => $request->input('title'),
             'cover_image' => $coverImagePath,
             'author' => $request->input('author'),
-            'isbn' => $request->input('isbn'),
-            'quantity' => $request->input('quantity'),
         ]);
 
-        return redirect()->route('books.index')->with('success', 'Book updated successfully!');
+        // Adjust book copies
+        $existingCopies = BookCopy::where('book_id', $book->id)->count();
+        $newCopiesCount = $request->input('quantity');
+
+        if ($newCopiesCount > $existingCopies) {
+            // Add new copies
+            for ($i = $existingCopies; $i < $newCopiesCount; $i++) {
+                BookCopy::create([
+                    'book_id' => $book->id,
+                    'isbn' => $request->input('isbn'),
+                    'available' => true,
+                ]);
+            }
+        } elseif ($newCopiesCount < $existingCopies) {
+            // Remove extra copies
+            BookCopy::where('book_id', $book->id)
+                ->latest()
+                ->limit($existingCopies - $newCopiesCount)
+                ->delete();
+        }
+
+        return redirect()->route('librarian.welcome')->with('success', 'Book updated successfully!');
     }
 
     /**
-     * Search books by title and optional genre.
+     * Delete a book from storage.
      */
-    public function searchBooks(Request $request)
+    public function destroy($id)
     {
-        $query = $request->input('search');
-        $genre = $request->input('genre');
-
-        $books = Book::where('title', 'like', "%$query%")
-                     ->when($genre, function ($q) use ($genre) {
-                         return $q->where('genre', $genre);
-                     })
-                     ->get();
-
-        return response()->json($books); // Return results as JSON
+        $book = Book::findOrFail($id);
+        $book->delete(); // This deletes the book, and the associated book copies are also deleted because of the foreign key constraint
+        return redirect()->route('librarian.welcome')->with('success', 'Book deleted successfully!');
     }
 }

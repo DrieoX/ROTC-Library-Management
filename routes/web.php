@@ -1,10 +1,11 @@
 <?php
 
 use App\Http\Controllers\Auth\RegisteredUserController;
-use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\RequestController;
+use App\Http\Controllers\ListController;
 use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\Auth\LoginController;
 use Illuminate\Support\Facades\Route;
@@ -13,19 +14,30 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
-Route::get('librarian/', [BookController::class, 'index'])->name('librarian.welcome');
 
-// Dashboard route for regular users (requires authentication)
+// Librarian routes
+Route::get('/librarian', [BookController::class, 'index'])->name('librarian.welcome');
+Route::get('/librarian/requests/list', [RequestController::class, 'listRequests'])->name('requests.list');
+Route::get('librarian/requests/stats', [RequestController::class, 'stats'])->name('requests.stats');
+
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/requests', [RequestController::class, 'listRequests'])->name('requests.list');
+    Route::post('/requests/{requestId}/approve', [RequestController::class, 'approve'])->name('requests.approve');
+    Route::delete('/requests/{requestId}/deny', [RequestController::class, 'deny'])->name('requests.deny');
+});
+
+
+// Dashboard routes
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
-// Librarian-specific dashboard route
 Route::get('/librarian/dashboard', [DashboardController::class, 'librarianIndex'])
-    ->middleware(['auth', 'verified']) // Ensure only librarians can access this route
+    ->middleware(['auth', 'verified'])
     ->name('librarian.dashboard');
 
-// Profile routes for authenticated users
+// Profile routes
 Route::middleware(['auth', 'no-cache'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -35,14 +47,9 @@ Route::middleware(['auth', 'no-cache'])->group(function () {
 // Authentication routes
 require __DIR__.'/auth.php';
 
-// Login routes with guest middleware
-Route::get('/login', [LoginController::class, 'create'])
-    ->middleware('guest')
-    ->name('login');
-
-Route::post('/login', [LoginController::class, 'store'])
-    ->middleware('guest')
-    ->name('login.store');
+// Login routes
+Route::get('/login', [LoginController::class, 'create'])->middleware('guest')->name('login');
+Route::post('/login', [LoginController::class, 'store'])->middleware('guest')->name('login.store');
 
 // Student registration routes
 Route::get('/register/student', [RegisteredUserController::class, 'createStudent'])->name('register-student');
@@ -52,16 +59,23 @@ Route::post('/register/student', [RegisteredUserController::class, 'storeStudent
 Route::get('/register/librarian', [RegisteredUserController::class, 'createLibrarian'])->name('register-librarian');
 Route::post('/register/librarian', [RegisteredUserController::class, 'storeLibrarian'])->name('register-librarian.store');
 
-// Achievement routes for authenticated users
+// Achievements
 Route::middleware(['auth'])->group(function () {
     Route::get('/achievements', [AchievementController::class, 'index'])->name('achievements.index');
 });
 
-// Book search route
-Route::post('/search-books', [BookController::class, 'searchBooks'])->name('search-books');
-Route::get('/books/create', [BookController::class, 'create'])->name('books.create');
-Route::post('/books', [BookController::class, 'store'])->name('books.store');
-Route::resource('books', BookController::class);
-Route::resource('books', BookController::class);
+// Routes for BookController
+Route::get('/books/create', [BookController::class, 'create'])->name('books.create'); // Create book
+Route::post('/books', [BookController::class, 'store'])->name('books.store'); // Store book
+Route::get('/books/{book}/edit', [BookController::class, 'edit'])->name('books.edit'); // Edit book
+Route::put('/books/{book}', [BookController::class, 'update'])->name('books.update'); // Update book
+Route::delete('/books/{book}', [BookController::class, 'destroy'])->name('books.destroy'); // Delete book
 
+// Routes for RequestController
+Route::post('/requests/{bookId}', [RequestController::class, 'store'])->name('requests.store');
+Route::get('/requests/{requestId}/approve', [RequestController::class, 'approve'])->name('requests.approve');
+Route::get('/requests/{requestId}/deny', [RequestController::class, 'deny'])->name('requests.deny');
 
+// Routes for ListController
+Route::get('/books/list', [ListController::class, 'index'])->name('books.list');
+Route::get('/books/search', [ListController::class, 'search'])->name('books.search');

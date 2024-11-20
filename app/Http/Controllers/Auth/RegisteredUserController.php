@@ -16,11 +16,17 @@ use Illuminate\View\View;
 
 class RegisteredUserController extends Controller
 {
+    /**
+     * Show the registration form for students.
+     */
     public function createStudent(): View
     {
         return view('auth.register-student');
     }
 
+    /**
+     * Handle the student registration request.
+     */
     public function storeStudent(Request $request): RedirectResponse
     {
         $request->validate([
@@ -51,18 +57,25 @@ class RegisteredUserController extends Controller
 
             Auth::login($user);
 
-            return redirect()->route('dashboard');
+            // Redirect to the student dashboard
+            return redirect()->route('student.dashboard');
         } catch (\Exception $e) {
             \Log::error('Registration error: ' . $e->getMessage());
             return back()->withErrors(['registration' => 'Registration failed, please try again.']);
         }
     }
 
+    /**
+     * Show the registration form for librarians.
+     */
     public function createLibrarian(): View
     {
         return view('auth.register-librarian');
     }
 
+    /**
+     * Handle the librarian registration request.
+     */
     public function storeLibrarian(Request $request): RedirectResponse
     {
         $request->validate([
@@ -95,7 +108,8 @@ class RegisteredUserController extends Controller
 
             Auth::login($user);
 
-            return redirect()->route('dashboard');
+            // Redirect to the librarian dashboard
+            return redirect()->route('librarian.dashboard');
         } catch (\Exception $e) {
             \Log::error('Registration error: ' . $e->getMessage());
             return back()->withErrors(['registration' => 'Registration failed, please try again.']);

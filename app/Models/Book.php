@@ -21,4 +21,10 @@ class Book extends Model
     {
         return $this->hasMany(BorrowingTransaction::class);
     }
+
+    public function copies()
+    {
+        return $this->hasMany(BookCopy::class);
+    }
+
 }
