@@ -13,12 +13,12 @@ return new class extends Migration
     {
         Schema::create('requests', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('student_id')->constrained('students')->onDelete('cascade'); // Foreign key to users table (students)
-            $table->foreignId('book_copy_id')->constrained('book_copies')->onDelete('cascade'); // Foreign key to book_copies table
-            $table->enum('status', ['pending', 'approved', 'denied'])->default('pending'); // Request status
+            $table->foreignId('student_id')->nullable()->constrained('students')->onDelete('cascade');
+            $table->foreignId('book_copy_id')->constrained('book_copies');
+            $table->enum('status', ['pending', 'approved', 'rejected']);
             $table->timestamps();
-        });          
-        
+        });
+                  
     }
 
     /**

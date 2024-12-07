@@ -15,13 +15,13 @@ return new class extends Migration
             $table->id();
             $table->foreignId('book_id')->constrained()->onDelete('cascade');
             $table->foreignId('student_id')->constrained()->onDelete('cascade');
-            $table->foreignId('librarian_id')->constrained()->onDelete('cascade');
+            $table->foreignId('librarian_id')->constrained('librarians', 'id')->onDelete('cascade'); // Reference to 'id' in 'librarians'
             $table->date('borrow_date');
             $table->date('due_date');
             $table->date('return_date')->nullable();
             $table->enum('status', ['active', 'returned', 'overdue'])->default('active');
             $table->timestamps();
-        });
+        });                
         
     }
 

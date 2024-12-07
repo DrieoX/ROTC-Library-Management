@@ -4,139 +4,196 @@ namespace App\Http\Controllers;
 
 use App\Models\Book;
 use App\Models\BookCopy;
-use App\Models\Requests; // Correct model for handling requests
+use App\Models\Requests;
+use App\Models\BorrowingTransaction; // Add BorrowingTransaction import
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BookController extends Controller
 {
-    /**
-     * Display a listing of the books for librarians to manage.
-     */
     public function index()
-    {
-        // Fetch all books with their associated copies
-        $books = Book::with('copies')->paginate(10);
+{
+    $books = Book::with('copies')->paginate(10);
 
-        // Calculate the counts for live stats
-        $ongoingBorrowedCount = Requests::where('status', 'borrowed')->count();
-        $requestedBooksCount = Requests::where('status', 'pending')->count();
+    // Count ongoing borrowed and requested books
+    $ongoingBorrowedCount = BorrowingTransaction::where('status', 'active')->count(); // Changed to count active borrowing transactions
+    $requestedBooksCount = Requests::where('status', 'pending')->count();
 
-        // Fetch all requests (pending and borrowed)
-        $requests = Requests::with(['bookCopy.book', 'student']) // Eager load relationships
-                            ->whereIn('status', ['pending', 'borrowed']) // Fetch requests that are pending or borrowed
-                            ->get();
+    // Fetch requests with their associated book copies and student
+    $requests = Requests::with(['bookCopy.book', 'student'])
+                        ->whereIn('status', ['pending', 'borrowed'])
+                        ->get();
 
-        // Pass all data to the librarian's welcome view
-        return view('librarian.welcome', compact('books', 'ongoingBorrowedCount', 'requestedBooksCount', 'requests'));
-    }
+    // Fetch borrowing transactions
+    $transactions = BorrowingTransaction::with('book', 'student', 'bookCopy')
+                                        ->where('status', 'active') // Only active transactions
+                                        ->get();
 
-    /**
-     * Show the form for creating a new book.
-     */
+    // Pass data to the view
+    return view('librarian.welcome', compact('books', 'ongoingBorrowedCount', 'requestedBooksCount', 'requests', 'transactions'));
+}
+
+public function welcome()
+{
+    // Fetch books (modify the query as needed for your requirements)
+    $books = Book::with('copies')->paginate(10); // Includes book copies if needed
+
+    return view('welcome', compact('books'));
+}
+
     public function create()
     {
-        return view('books.create'); // Change this to the correct blade file for adding a book
+        return view('books.create');
     }
 
-    /**
-     * Store a newly created book in storage.
-     */
     public function store(Request $request)
-    {
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'author' => 'required|string|max:255',
-            'isbn' => 'required|string|unique:book_copies|max:13',
-            'quantity' => 'required|integer|min:1',
-        ]);
+{
+    // Validate input fields
+    $request->validate([
+        'title' => 'required|string|max:255',
+        'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        'author' => 'required|string|max:255',
+        'description' => 'nullable|string|max:1000', // Validate the description
+        'isbn' => 'required|array|min:1',
+        'isbn.*' => 'required|string|max:19|unique:book_copies,isbn',
+    ]);
 
-        // Create the main book record
+    DB::beginTransaction();
+
+    try {
+        // Create the book record
         $book = Book::create([
             'title' => $request->input('title'),
-            'cover_image' => $request->hasFile('cover_image') ? $request->file('cover_image')->store('covers', 'public') : null,
+            'cover_image' => $request->hasFile('cover_image') 
+                ? $request->file('cover_image')->store('covers', 'public') 
+                : null,
             'author' => $request->input('author'),
+            'description' => $request->input('description'), // Store description
         ]);
 
-        // Add book copies
-        for ($i = 0; $i < $request->input('quantity'); $i++) {
+        // Add book copies with ISBNs
+        foreach ($request->input('isbn') as $isbn) {
             BookCopy::create([
                 'book_id' => $book->id,
-                'isbn' => $request->input('isbn'),
-                'available' => true, // All new copies are available by default
+                'isbn' => $isbn,
+                'available' => true,
             ]);
         }
 
-        return redirect()->route('librarian.welcome')->with('success', 'Book added successfully!');
-    }
+        DB::commit();
 
-    /**
-     * Show the form for editing a specific book.
-     */
+        // Redirect back with success message
+        return redirect()->route('librarian.welcome')->with('success', 'Book added successfully!');
+    } catch (\Exception $e) {
+        // Rollback transaction and log the error
+        DB::rollBack();
+        \Log::error('Book Store Error: ' . $e->getMessage());
+        return redirect()->back()->withErrors(['error' => 'An error occurred while saving the book.']);
+    }
+}
+
+
     public function edit($id)
     {
-        $book = Book::findOrFail($id);
-        return view('books.edit', compact('book')); // Change this to the correct blade file for editing a book
+        // Fetch book and its copies for editing
+        $book = Book::with('copies')->findOrFail($id);
+        return view('books.edit', compact('book'));
     }
 
-    /**
-     * Update a specific book in storage.
-     */
     public function update(Request $request, $id)
-    {
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'author' => 'required|string|max:255',
-            'isbn' => 'required|string|max:13|unique:book_copies,isbn,' . $id . ',book_id',
-            'quantity' => 'required|integer|min:1',
-        ]);
+{
+    $book = Book::findOrFail($id);
 
-        $book = Book::findOrFail($id);
+    // Validate input fields
+    $request->validate([
+        'title' => 'required|string|max:255',
+        'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        'author' => 'required|string|max:255',
+        'description' => 'nullable|string|max:1000', // Validate the description
+        'isbn' => 'required|array|min:1',
+        'isbn.*' => 'required|string|max:13|unique:book_copies,isbn,' . $id,
+    ]);
 
-        // Update the main book record
-        $coverImagePath = $book->cover_image;
-        if ($request->hasFile('cover_image')) {
-            $coverImagePath = $request->file('cover_image')->store('covers', 'public');
-        }
+    DB::beginTransaction();
 
+    try {
+        // Update the book record
         $book->update([
             'title' => $request->input('title'),
-            'cover_image' => $coverImagePath,
+            'cover_image' => $request->hasFile('cover_image') 
+                ? $request->file('cover_image')->store('covers', 'public') 
+                : $book->cover_image,
             'author' => $request->input('author'),
+            'description' => $request->input('description'), // Update description
         ]);
 
-        // Adjust book copies
-        $existingCopies = BookCopy::where('book_id', $book->id)->count();
-        $newCopiesCount = $request->input('quantity');
+        // Delete existing book copies and add the new ones
+        BookCopy::where('book_id', $book->id)->delete();
 
-        if ($newCopiesCount > $existingCopies) {
-            // Add new copies
-            for ($i = $existingCopies; $i < $newCopiesCount; $i++) {
-                BookCopy::create([
-                    'book_id' => $book->id,
-                    'isbn' => $request->input('isbn'),
-                    'available' => true,
-                ]);
-            }
-        } elseif ($newCopiesCount < $existingCopies) {
-            // Remove extra copies
-            BookCopy::where('book_id', $book->id)
-                ->latest()
-                ->limit($existingCopies - $newCopiesCount)
-                ->delete();
+        foreach ($request->input('isbn') as $isbn) {
+            BookCopy::create([
+                'book_id' => $book->id,
+                'isbn' => $isbn,
+                'available' => true,
+            ]);
         }
 
+        DB::commit();
+
+        // Redirect back with success message
         return redirect()->route('librarian.welcome')->with('success', 'Book updated successfully!');
+    } catch (\Exception $e) {
+        // Rollback transaction and log the error
+        DB::rollBack();
+        \Log::error('Book Update Error: ' . $e->getMessage());
+        return redirect()->back()->withErrors(['error' => 'An error occurred while updating the book.']);
+    }
+}
+    public function destroy($id)
+    {
+        // Find and delete the book
+        $book = Book::findOrFail($id);
+        $book->delete();
+
+        // Redirect back with success message
+        return redirect()->route('librarian.welcome')->with('success', 'Book deleted successfully!');
     }
 
     /**
-     * Delete a book from storage.
+     * Return a borrowed book.
      */
-    public function destroy($id)
-    {
-        $book = Book::findOrFail($id);
-        $book->delete(); // This deletes the book, and the associated book copies are also deleted because of the foreign key constraint
-        return redirect()->route('librarian.welcome')->with('success', 'Book deleted successfully!');
+    public function return($transactionId)
+{
+    // Find the borrowing transaction
+    $transaction = BorrowingTransaction::findOrFail($transactionId);
+
+    DB::beginTransaction();
+
+    try {
+        // Ensure the status is 'active' before returning the book
+        if ($transaction->status !== 'active') {
+            return redirect()->route('librarian.welcome')->with('error', 'This transaction is not active.');
+        }
+
+        // Update transaction status to 'returned'
+        $transaction->status = 'returned';
+        $transaction->save();
+
+        // Update the book copy to be available again
+        $transaction->bookCopy->available = true;
+        $transaction->bookCopy->save();
+
+        // Optionally, you can mark the request as 'returned' if necessary
+        $transaction->request->status = 'returned';
+        $transaction->request->save();
+
+        DB::commit();
+
+        return redirect()->route('librarian.welcome')->with('success', 'Book returned successfully! It is now available for borrowing again.');
+    } catch (\Exception $e) {
+        DB::rollBack();
+        \Log::error('Return Book Error: ' . $e->getMessage());
+        return redirect()->back()->withErrors(['error' => 'An error occurred while returning the book.']);
     }
+}
 }

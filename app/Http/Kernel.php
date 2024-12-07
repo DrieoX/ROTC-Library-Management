@@ -3,6 +3,13 @@
 namespace App\Http;
 
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
+use App\Http\Middleware\TrustProxies;
+use App\Http\Middleware\PreventRequestsDuringMaintenance;
+use App\Http\Middleware\TrimStrings;
+use App\Http\Middleware\EncryptCookies;
+use App\Http\Middleware\VerifyCsrfToken;
+use Illuminate\Routing\Middleware\SubstituteBindings;
+use Illuminate\Console\Scheduling\Schedule;
 
 class Kernel extends HttpKernel
 {
@@ -12,11 +19,11 @@ class Kernel extends HttpKernel
      * @var array
      */
     protected $middleware = [
-        \App\Http\Middleware\TrustProxies::class,
+        TrustProxies::class,
         \Illuminate\Http\Middleware\HandleCors::class,
-        \App\Http\Middleware\PreventRequestsDuringMaintenance::class,
+        PreventRequestsDuringMaintenance::class,
         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
-        \App\Http\Middleware\TrimStrings::class,
+        TrimStrings::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
     ];
 
@@ -27,18 +34,18 @@ class Kernel extends HttpKernel
      */
     protected $middlewareGroups = [
         'web' => [
-            \App\Http\Middleware\EncryptCookies::class,
+            EncryptCookies::class,
             \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
             \Illuminate\Session\Middleware\StartSession::class,
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
-            \App\Http\Middleware\VerifyCsrfToken::class,
-            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            VerifyCsrfToken::class,
+            SubstituteBindings::class,
             \App\Http\Middleware\NoCache::class, // No-cache middleware applied here
         ],
 
         'api' => [
             'throttle:api',
-            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            SubstituteBindings::class,
         ],
     ];
 
@@ -57,9 +64,17 @@ class Kernel extends HttpKernel
         'signed' => \Illuminate\Routing\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
-
-        // Custom role-based middleware for students and librarians
-        'student' => \App\Http\Middleware\EnsureStudent::class,
-        'ensureLibrarian' => \App\Http\Middleware\EnsureLibrarian::class,
     ];
+
+    /**
+     * Define the application's command schedule.
+     *
+     * @param \Illuminate\Console\Scheduling\Schedule $schedule
+     * @return void
+     */
+    protected function schedule(Schedule $schedule)
+    {
+        // Schedule tasks here, e.g., run every day at midnight
+        $schedule->job(\App\Jobs\CheckOverdueTransactions::class)->daily();
+    }
 }

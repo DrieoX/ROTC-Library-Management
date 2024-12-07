@@ -52,7 +52,9 @@
     <div class="requested-books mt-5">
         <h3>Requested Books</h3>
         
-        @foreach ($requests->groupBy('bookCopy.book_id') as $bookId => $bookRequests)
+        @foreach ($requests->groupBy('bookCopy.book_id')->sortBy(function($group) {
+            return $group->first()->bookCopy->book->title; // Sort by book title
+        }) as $bookId => $bookRequests)
             <h4>{{ $bookRequests->first()->bookCopy->book->title }}</h4> <!-- Group by book -->
 
             <table class="table mt-3">
@@ -73,18 +75,9 @@
                             <td>{{ ucfirst($request->status) }}</td>
                             <td>{{ $request->created_at->format('Y-m-d H:i:s') }}</td>
                             <td>
-                                @if ($request->status === 'pending')
-                                    <form action="{{ route('requests.approve', $request->id) }}" method="POST" style="display: inline;">
-                                        @csrf
-                                        <button class="btn btn-success" type="submit">Approve</button>
-                                    </form>
-                                    <form action="{{ route('requests.deny', $request->id) }}" method="POST" style="display: inline;">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button class="btn btn-danger" type="submit">Deny</button>
-                                    </form>
-                                @else
-                                    <span class="text-muted">No actions available</span>
+                                @if ($request->status == 'pending')
+                                    <a href="{{ route('requests.approve', $request->id) }}" class="btn btn-success">Approve</a>
+                                    <a href="{{ route('requests.deny', $request->id) }}" class="btn btn-danger">Deny</a>
                                 @endif
                             </td>
                         </tr>
@@ -93,18 +86,43 @@
             </table>
         @endforeach
     </div>
-</div>
 
-<script>
-    // Optionally add dynamic refresh functionality using AJAX
-    setInterval(() => {
-        fetch('{{ route("requests.stats") }}')
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('borrowed-count').textContent = data.borrowed;
-                document.getElementById('requested-count').textContent = data.requested;
-            })
-            .catch(error => console.error('Error fetching stats:', error));
-    }, 5000); // Refresh every 5 seconds
-</script>
+    <!-- Borrowing Transactions Section -->
+    <div class="borrowed-books mt-5">
+        <h3>Borrowed Books</h3>
+
+        <table class="table mt-3">
+            <thead>
+                <tr>
+                    <th>Book Title</th>
+                    <th>Student</th>
+                    <th>Borrow Date</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($transactions as $transaction)
+                    <tr>
+                        <td>{{ $transaction->book->title }}</td>
+                        <td>{{ $transaction->student->name }}</td>
+                        <td>{{ $transaction->borrow_date->format('Y-m-d') }}</td>
+                        <td>{{ $transaction->due_date->format('Y-m-d') }}</td>
+                        <td>{{ ucfirst($transaction->status) }}</td>
+                        <td>
+                            @if ($transaction->status == 'active')
+                                <form action="{{ route('transactions.return', $transaction->id) }}" method="POST" style="display:inline;">
+                                    @csrf
+                                    <button type="submit" class="btn btn-primary">Return Book</button>
+                                </form>
+                            @endif
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+
+</div>
 @endsection

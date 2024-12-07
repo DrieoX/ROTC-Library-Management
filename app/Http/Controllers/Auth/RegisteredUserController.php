@@ -38,11 +38,11 @@ class RegisteredUserController extends Controller
         ]);
 
         try {
+            // Create user
             $user = User::create([
-                'name' => "{$request->first_name} {$request->last_name}", // Concatenate names
+                'name' => "{$request->first_name} {$request->last_name}",
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
-                'role' => 'student',
             ]);
 
             // Store in students table
@@ -58,7 +58,7 @@ class RegisteredUserController extends Controller
             Auth::login($user);
 
             // Redirect to the student dashboard
-            return redirect()->route('student.dashboard');
+            return redirect()->route('dashboard');
         } catch (\Exception $e) {
             \Log::error('Registration error: ' . $e->getMessage());
             return back()->withErrors(['registration' => 'Registration failed, please try again.']);
@@ -88,11 +88,11 @@ class RegisteredUserController extends Controller
         ]);
 
         try {
+            // Create user
             $user = User::create([
-                'name' => "{$request->first_name} {$request->last_name}", // Concatenate names
+                'name' => "{$request->first_name} {$request->last_name}",
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
-                'role' => 'librarian',
             ]);
 
             // Store in librarians table

@@ -11,21 +11,16 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
+     * Mass assignable attributes.
      */
     protected $fillable = [
         'name',
         'email',
         'password',
-        'role', // Role attribute for distinguishing user types
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
+     * Hidden attributes for serialization.
      */
     protected $hidden = [
         'password',
@@ -33,19 +28,15 @@ class User extends Authenticatable
     ];
 
     /**
-     * The attributes that should be cast.
-     *
-     * @return array<string, string>
+     * Attribute casting.
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'password' => 'hashed', // Ensure password is hashed
+        'password' => 'hashed',
     ];
 
     /**
      * Relationship with Student model.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\HasOne
      */
     public function student()
     {
@@ -54,8 +45,6 @@ class User extends Authenticatable
 
     /**
      * Relationship with Librarian model.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\HasOne
      */
     public function librarian()
     {
@@ -63,22 +52,18 @@ class User extends Authenticatable
     }
 
     /**
-     * Relationship with Achievement model.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * Determine if the user is a student.
      */
-    public function achievements()
+    public function isStudent()
     {
-        return $this->hasMany(Achievement::class);
+        return $this->student()->exists();
     }
 
     /**
-     * Check if the user is a librarian.
-     *
-     * @return bool
+     * Determine if the user is a librarian.
      */
     public function isLibrarian()
     {
-        return $this->role === 'librarian';
+        return $this->librarian()->exists();
     }
 }

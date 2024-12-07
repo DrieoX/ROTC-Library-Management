@@ -30,7 +30,15 @@ class AuthenticatedSessionController extends Controller
         if (Auth::attempt($request->only('email', 'password'), $request->filled('remember'))) {
             $request->session()->regenerate(); // Regenerate session to prevent session fixation
 
-            return redirect()->intended('dashboard'); // Redirect to the dashboard or wherever appropriate
+            // Redirect based on user role
+            if (Auth::user()->role === 'librarian') {
+                return redirect()->intended('/librarian'); // Redirect librarians to the librarian dashboard
+            } else if (Auth::user()->role === 'student') {
+                return redirect()->intended('/student'); // Redirect students to the student dashboard
+            }
+
+            // Default redirect if role is not specified
+            return redirect()->intended('dashboard');
         }
 
         // If authentication fails, redirect back with errors

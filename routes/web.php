@@ -6,27 +6,24 @@ use App\Http\Controllers\BookController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\RequestController;
 use App\Http\Controllers\ListController;
+use App\Http\Controllers\FineController;
 use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\Auth\LoginController;
 use Illuminate\Support\Facades\Route;
 
 // Home route
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/', [BookController::class, 'welcome'])->name('welcome');
 
 // Librarian routes
 Route::get('/librarian', [BookController::class, 'index'])->name('librarian.welcome');
 Route::get('/librarian/requests/list', [RequestController::class, 'listRequests'])->name('requests.list');
 Route::get('librarian/requests/stats', [RequestController::class, 'stats'])->name('requests.stats');
 
-
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/requests', [RequestController::class, 'listRequests'])->name('requests.list');
     Route::post('/requests/{requestId}/approve', [RequestController::class, 'approve'])->name('requests.approve');
     Route::delete('/requests/{requestId}/deny', [RequestController::class, 'deny'])->name('requests.deny');
 });
-
 
 // Dashboard routes
 Route::get('/dashboard', [DashboardController::class, 'index'])
@@ -79,3 +76,8 @@ Route::get('/requests/{requestId}/deny', [RequestController::class, 'deny'])->na
 // Routes for ListController
 Route::get('/books/list', [ListController::class, 'index'])->name('books.list');
 Route::get('/books/search', [ListController::class, 'search'])->name('books.search');
+
+Route::get('fines', [FineController::class, 'index'])->name('fines.index');
+Route::post('fines/pay/{fine}', [FineController::class, 'payFine'])->name('fines.pay');
+
+Route::post('/transactions/{transaction}/return', [BookController::class, 'return'])->name('transactions.return');

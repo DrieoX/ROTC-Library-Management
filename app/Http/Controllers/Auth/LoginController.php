@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Student;
+use App\Models\Librarian;
 
 class LoginController extends Controller
 {
@@ -30,11 +32,24 @@ class LoginController extends Controller
         if (Auth::attempt($request->only('email', 'password'), $request->filled('remember'))) {
             $request->session()->regenerate(); // Regenerate session to prevent session fixation
 
-            // Redirect based on user role
-            if (Auth::user()->role === 'librarian') {
-                return redirect()->intended('/librarian');
-            }
+            $user = Auth::user();
 
+            // Check if the authenticated user is a student
+            $isStudent = Student::where('user_id', $user->id)->exists();
+
+            // Check if the authenticated user is a librarian
+            $isLibrarian = Librarian::where('user_id', $user->id)->exists();
+
+            if ($isStudent) {
+                return redirect()->intended('/'); // Redirect to student's homepage
+            } elseif ($isLibrarian) {
+                return redirect()->intended('/librarian'); // Redirect to librarian's homepage
+            } else {
+                Auth::logout();
+                return back()->withErrors([
+                    'email' => 'Your account is not associated with a valid student or librarian record.',
+                ]);
+            }
         }
 
         // If authentication fails, redirect back with errors

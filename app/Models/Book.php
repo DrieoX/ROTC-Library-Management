@@ -7,16 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 
 class Book extends Model
 {
-
     use HasFactory;
 
     protected $fillable = [
         'title',
         'cover_image',
         'author',
-        'isbn',
-        'quantity',
+        'description',
     ];
+
     public function borrowingTransactions()
     {
         return $this->hasMany(BorrowingTransaction::class);
@@ -26,5 +25,4 @@ class Book extends Model
     {
         return $this->hasMany(BookCopy::class);
     }
-
 }

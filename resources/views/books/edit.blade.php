@@ -40,8 +40,24 @@
         </div>
 
         <div class="form-group">
+            <label for="description">Description</label>
+            <textarea name="description" id="description" class="form-control" required>{{ old('description', $book->description) }}</textarea>
+            @error('description')
+                <div class="text-danger">{{ $message }}</div>
+            @enderror
+        </div>
+
+        <div class="form-group">
             <label for="isbn">ISBN</label>
-            <input type="text" name="isbn" id="isbn" class="form-control" value="{{ old('isbn', $book->isbn) }}" required>
+            <div id="isbn-container">
+                @foreach ($book->copies as $copy)
+                    <div class="isbn-entry mb-2">
+                        <input type="text" name="isbn[]" class="form-control" value="{{ old('isbn', $copy->isbn) }}" required>
+                        <button type="button" class="btn btn-danger remove-isbn" style="margin-top: 5px;">Remove</button>
+                    </div>
+                @endforeach
+                <button type="button" class="btn btn-primary" id="add-isbn">Add ISBN</button>
+            </div>
             @error('isbn')
                 <div class="text-danger">{{ $message }}</div>
             @enderror
@@ -49,14 +65,40 @@
 
         <div class="form-group">
             <label for="quantity">Quantity</label>
-            <input type="number" name="quantity" id="quantity" class="form-control" value="{{ old('quantity', $book->quantity) }}" required min="1">
+            <input type="number" name="quantity" id="quantity" class="form-control" value="{{ old('quantity', $book->copies->count()) }}" required min="1" readonly>
             @error('quantity')
                 <div class="text-danger">{{ $message }}</div>
             @enderror
         </div>
 
         <button type="submit" class="btn btn-primary">Update Book</button>
-        <a href="{{ route('books.index') }}" class="btn btn-secondary">Cancel</a>
+        <a href="{{ route('librarian.welcome') }}" class="btn btn-secondary">Cancel</a>
     </form>
 </div>
+
+@section('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const isbnContainer = document.getElementById('isbn-container');
+        const addIsbnButton = document.getElementById('add-isbn');
+
+        addIsbnButton.addEventListener('click', function() {
+            const newIsbnEntry = document.createElement('div');
+            newIsbnEntry.classList.add('isbn-entry', 'mb-2');
+            newIsbnEntry.innerHTML = `
+                <input type="text" name="isbn[]" class="form-control" required>
+                <button type="button" class="btn btn-danger remove-isbn" style="margin-top: 5px;">Remove</button>
+            `;
+            isbnContainer.appendChild(newIsbnEntry);
+        });
+
+        isbnContainer.addEventListener('click', function(e) {
+            if (e.target && e.target.classList.contains('remove-isbn')) {
+                e.target.closest('.isbn-entry').remove();
+            }
+        });
+    });
+</script>
+@endsection
+
 @endsection

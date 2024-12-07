@@ -16,25 +16,41 @@
             <div class="book-item">
                 <h3>{{ $book->title }}</h3>
                 <p>Author: {{ $book->author }}</p>
-                <p>ISBN: {{ $book->copies->first()->isbn ?? 'N/A' }}</p> {{-- Display first copy's ISBN or 'N/A' if no copies available --}}
-                <p>Available Copies: {{ $book->copies->where('available', true)->count() }}</p>
+                <p>Description: {{ $book->description ?? 'No description available.' }}</p> {{-- Display the book's description or a fallback message --}}
 
-                {{-- Check if the user has already requested the book --}}
                 @php
+                    $availableCopiesCount = $book->copies->where('available', true)->count();
+                    $borrowedCopiesCount = $book->copies->where('available', false)->count();
                     $userRequested = $book->copies->contains(function ($copy) {
                         return $copy->requests()->where('student_id', auth()->id())->exists();
                     });
                 @endphp
 
-                {{-- Show the request button only if the user hasn't already requested the book --}}
+                {{-- Available and Borrowed Copies --}}
+                <p>Available Copies: {{ $availableCopiesCount }} </p>
+                @if ($borrowedCopiesCount > 0)
+                    <p>Borrowed Copies: {{ $borrowedCopiesCount }}</p>
+                @endif
+
+                {{-- Check if the user has already requested the book --}}
                 @if ($userRequested)
                     <p>You have already requested this book.</p>
                 @else
-                    {{-- Button to request book --}}
-                    <form action="{{ route('requests.store', $book->id) }}" method="POST">
-                        @csrf
-                        <button type="submit">Request to Borrow</button>
-                    </form>
+                    {{-- Show message if no copies are available --}}
+                    @if ($availableCopiesCount == 0)
+                        <p class="text-danger">No copies available for borrowing.</p>
+                    @else
+                        {{-- Button to request book --}}
+                        <form action="{{ route('requests.store', $book->id) }}" method="POST">
+                            @csrf
+                            <button type="submit">Request to Borrow</button>
+                        </form>
+                    @endif
+                @endif
+
+                {{-- If no copies are available, show that it can't be borrowed --}}
+                @if ($availableCopiesCount == 0 && $borrowedCopiesCount == 0)
+                    <p class="text-danger">This book cannot be borrowed as there are no available copies.</p>
                 @endif
             </div>
         @endforeach
