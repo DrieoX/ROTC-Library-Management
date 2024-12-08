@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('student_id')->nullable()->constrained('students')->onDelete('cascade');
             $table->foreignId('book_copy_id')->constrained('book_copies');
-            $table->enum('status', ['pending', 'approved', 'rejected']);
+            $table->enum('status', ['pending', 'approved', 'rejected', 'returned']);
             $table->timestamps();
         });
                   

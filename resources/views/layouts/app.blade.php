@@ -108,7 +108,8 @@
             left: 50%;
             transform: translate(-50%, -50%);
             width: 90%;
-            max-width: 600px;
+            max-width: 800px; /* Updated max-width */
+            max-height: 90%; /* Ensure modal fits screen */
             background-color: white;
             padding: 20px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
@@ -174,12 +175,12 @@
         }
 
         .book-item {
-            background-color: rgba(255, 255, 255, 0.8); /* Transparent white background */
-            color: black; /* Black font color */
+            background-color: rgba(255, 255, 255, 0.8);
+            color: black;
             padding: 20px;
-            border-radius: 8px; /* Rounded corners */
-            width: 250px; /* Adjust width as necessary */
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Optional: add shadow for better contrast */
+            border-radius: 8px;
+            width: 250px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         .book-item h3 {
@@ -223,9 +224,10 @@
             <a href="{{ route('books.list') }}">Books</a>
             <a href="{{ url('#') }}" onclick="toggleModal('updatesModal')">Updates</a>
             @auth
-                <a href="{{ url('#') }}" onclick="toggleModal('achievementsModal')" class="button">Achievements</a>
+                <a href="{{ route('achievements.index') }}" class="button">Achievements</a>
+
             @else
-                <a href="{{ route('login') }}" class="button">Login</a>
+                <a href="{{ route('login') }}" class="button">Achievements</a>
             @endauth
         </nav>
         <div class="auth-buttons">
@@ -276,8 +278,8 @@
             <h5>Achievements</h5>
             <button class="close-btn" onclick="toggleModal('achievementsModal')">&times;</button>
         </div>
-        <div class="modal-body">
-            @include('modals.achievements')
+        <div class="modal-body" id="achievementsContent">
+            <!-- Content will be loaded here via AJAX -->
         </div>
     </div>
 
@@ -287,16 +289,23 @@
     <script>
         function toggleModal(modalId) {
             const modal = document.getElementById(modalId);
+            const achievementsContent = document.getElementById('achievementsContent');
+
+            if (modalId === 'achievementsModal' && !achievementsContent.innerHTML) {
+                // Fetch the achievements content using AJAX
+                $.ajax({
+                    url: '/achievements',
+                    type: 'GET',
+                    success: function(data) {
+                        achievementsContent.innerHTML = data;
+                    },
+                    error: function() {
+                        achievementsContent.innerHTML = '<p>Failed to load achievements. Please try again later.</p>';
+                    }
+                });
+            }
             modal.classList.toggle('active');
         }
-
-        window.onclick = function(event) {
-            document.querySelectorAll('.custom-modal').forEach(modal => {
-                if (event.target == modal) {
-                    modal.classList.remove('active');
-                }
-            });
-        };
     </script>
 </body>
 </html>

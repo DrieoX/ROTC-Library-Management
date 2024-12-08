@@ -48,20 +48,25 @@
         </div>
 
         <div class="form-group">
-            <label for="isbn">ISBN</label>
-            <div id="isbn-container">
-                @foreach ($book->copies as $copy)
-                    <div class="isbn-entry mb-2">
-                        <input type="text" name="isbn[]" class="form-control" value="{{ old('isbn', $copy->isbn) }}" required>
-                        <button type="button" class="btn btn-danger remove-isbn" style="margin-top: 5px;">Remove</button>
-                    </div>
-                @endforeach
-                <button type="button" class="btn btn-primary" id="add-isbn">Add ISBN</button>
+    <label for="isbn">ISBN</label>
+    <div id="isbn-container">
+        @foreach ($book->copies as $copy)
+            <div class="isbn-entry mb-2">
+                <input 
+                    type="text" 
+                    name="isbn[]" 
+                    class="form-control" 
+                    value="{{ $copy->isbn }}" 
+                    required>
+                <button type="button" class="btn btn-danger remove-isbn" style="margin-top: 5px;">Remove</button>
             </div>
-            @error('isbn')
-                <div class="text-danger">{{ $message }}</div>
-            @enderror
-        </div>
+        @endforeach
+        <button type="button" class="btn btn-primary" id="add-isbn">Add ISBN</button>
+    </div>
+    @error('isbn')
+        <div class="text-danger">{{ $message }}</div>
+    @enderror
+</div>
 
         <div class="form-group">
             <label for="quantity">Quantity</label>
@@ -79,25 +84,29 @@
 @section('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const isbnContainer = document.getElementById('isbn-container');
-        const addIsbnButton = document.getElementById('add-isbn');
+    const isbnContainer = document.getElementById('isbn-container');
+    const addIsbnButton = document.getElementById('add-isbn');
 
-        addIsbnButton.addEventListener('click', function() {
-            const newIsbnEntry = document.createElement('div');
-            newIsbnEntry.classList.add('isbn-entry', 'mb-2');
-            newIsbnEntry.innerHTML = `
-                <input type="text" name="isbn[]" class="form-control" required>
-                <button type="button" class="btn btn-danger remove-isbn" style="margin-top: 5px;">Remove</button>
-            `;
-            isbnContainer.appendChild(newIsbnEntry);
-        });
-
-        isbnContainer.addEventListener('click', function(e) {
-            if (e.target && e.target.classList.contains('remove-isbn')) {
-                e.target.closest('.isbn-entry').remove();
-            }
-        });
+    // Add a new ISBN entry when the "Add ISBN" button is clicked
+    addIsbnButton.addEventListener('click', function() {
+        const newIsbnEntry = document.createElement('div');
+        newIsbnEntry.classList.add('isbn-entry', 'mb-2');
+        newIsbnEntry.innerHTML = `
+            <input type="text" name="isbn[]" class="form-control" required>
+            <button type="button" class="btn btn-danger remove-isbn" style="margin-top: 5px;">Remove</button>
+        `;
+        isbnContainer.appendChild(newIsbnEntry);
     });
+
+    // Delegate the event for dynamically added "Remove" buttons
+    isbnContainer.addEventListener('click', function(e) {
+        if (e.target && e.target.classList.contains('remove-isbn')) {
+            // Remove the closest ISBN entry when the "Remove" button is clicked
+            e.target.closest('.isbn-entry').remove();
+        }
+    });
+});
+
 </script>
 @endsection
 

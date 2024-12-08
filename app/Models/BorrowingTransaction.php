@@ -48,6 +48,11 @@ class BorrowingTransaction extends Model
         return $this->belongsTo(BookCopy::class, 'book_id', 'book_id');
     }
 
+    public function request()
+{
+    return $this->belongsTo(Requests::class);
+}
+
     public function isOverdue()
     {
         return $this->status === 'active' && $this->due_date < now();

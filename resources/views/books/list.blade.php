@@ -16,13 +16,16 @@
             <div class="book-item">
                 <h3>{{ $book->title }}</h3>
                 <p>Author: {{ $book->author }}</p>
-                <p>Description: {{ $book->description ?? 'No description available.' }}</p> {{-- Display the book's description or a fallback message --}}
+                <p>Description: {{ $book->description ?? 'No description available.' }}</p>
 
                 @php
                     $availableCopiesCount = $book->copies->where('available', true)->count();
                     $borrowedCopiesCount = $book->copies->where('available', false)->count();
                     $userRequested = $book->copies->contains(function ($copy) {
                         return $copy->requests()->where('student_id', auth()->id())->exists();
+                    });
+                    $requestReturned = $book->copies->contains(function ($copy) {
+                        return $copy->requests()->where('student_id', auth()->id())->where('status', 'returned')->exists();
                     });
                 @endphp
 
@@ -33,8 +36,17 @@
                 @endif
 
                 {{-- Check if the user has already requested the book --}}
-                @if ($userRequested)
+                @if ($userRequested && !$requestReturned)
                     <p>You have already requested this book.</p>
+                @elseif ($requestReturned)
+                    <p>Your previous request was returned. You can request the book again.</p>
+                    {{-- Show button to request again --}}
+                    @if ($availableCopiesCount > 0)
+                        <form action="{{ route('requests.store', $book->id) }}" method="POST">
+                            @csrf
+                            <button type="submit">Request to Borrow</button>
+                        </form>
+                    @endif
                 @else
                     {{-- Show message if no copies are available --}}
                     @if ($availableCopiesCount == 0)

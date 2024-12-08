@@ -8,6 +8,7 @@ use App\Models\Requests;
 use App\Models\BorrowingTransaction; // Add BorrowingTransaction import
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class BookController extends Controller
 {
@@ -102,98 +103,107 @@ public function welcome()
 
     public function update(Request $request, $id)
 {
-    $book = Book::findOrFail($id);
-
-    // Validate input fields
     $request->validate([
         'title' => 'required|string|max:255',
-        'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         'author' => 'required|string|max:255',
-        'description' => 'nullable|string|max:1000', // Validate the description
-        'isbn' => 'required|array|min:1',
-        'isbn.*' => 'required|string|max:13|unique:book_copies,isbn,' . $id,
+        'description' => 'required|string',
+        'isbn' => 'required|array',
+        'isbn.*' => 'required|string|distinct',
+        'cover_image' => 'nullable|image|max:2048',
     ]);
 
-    DB::beginTransaction();
+    // Find the book
+    $book = Book::findOrFail($id);
 
-    try {
-        // Update the book record
-        $book->update([
-            'title' => $request->input('title'),
-            'cover_image' => $request->hasFile('cover_image') 
-                ? $request->file('cover_image')->store('covers', 'public') 
-                : $book->cover_image,
-            'author' => $request->input('author'),
-            'description' => $request->input('description'), // Update description
-        ]);
+    // Update book details
+    $book->title = $request->title;
+    $book->author = $request->author;
+    $book->description = $request->description;
 
-        // Delete existing book copies and add the new ones
-        BookCopy::where('book_id', $book->id)->delete();
+    // Handle cover image upload (optional)
+    if ($request->hasFile('cover_image')) {
+        $imagePath = $request->file('cover_image')->store('covers', 'public');
+        $book->cover_image = basename($imagePath);
+    }
 
-        foreach ($request->input('isbn') as $isbn) {
-            BookCopy::create([
-                'book_id' => $book->id,
-                'isbn' => $isbn,
-                'available' => true,
-            ]);
+    $book->save();
+
+    // Update book copies: match the old copies with the new ISBNs
+    foreach ($request->isbn as $index => $isbn) {
+        // Check if there's an existing book copy to update
+        $copy = $book->copies()->skip($index)->first(); // Get the copy at the current index
+        if ($copy) {
+            $copy->isbn = $isbn;  // Update the ISBN
+            $copy->save();
+        } else {
+            // If there is no existing copy (in case of new entries), create a new one
+            $book->copies()->create(['isbn' => $isbn, 'available' => true]);
         }
-
-        DB::commit();
-
-        // Redirect back with success message
-        return redirect()->route('librarian.welcome')->with('success', 'Book updated successfully!');
-    } catch (\Exception $e) {
-        // Rollback transaction and log the error
-        DB::rollBack();
-        \Log::error('Book Update Error: ' . $e->getMessage());
-        return redirect()->back()->withErrors(['error' => 'An error occurred while updating the book.']);
     }
+
+    return redirect()->route('librarian.welcome')->with('success', 'Book updated successfully!');
 }
-    public function destroy($id)
-    {
-        // Find and delete the book
-        $book = Book::findOrFail($id);
-        $book->delete();
+public function destroy($id)
+{
+    // Find the book
+    $book = Book::findOrFail($id);
 
-        // Redirect back with success message
-        return redirect()->route('librarian.welcome')->with('success', 'Book deleted successfully!');
+    // Proceed to delete the book
+    $book->delete();
+
+    // Redirect back with success message
+    return redirect()->route('librarian.welcome')->with('success', 'Book deleted successfully!');
+}
+
+public function confirmDelete($id)
+{
+    // Find the book by ID
+    $book = Book::findOrFail($id);
+
+    // Check if the book has related requests
+    if ($book->copies()->whereHas('requests')->exists()) {
+        return redirect()->route('librarian.welcome')
+                         ->with('error', 'Cannot delete this book because it has related requests.');
     }
+
+    // Return the confirmation view
+    return view('books.destroy', compact('book'));
+}
+
 
     /**
      * Return a borrowed book.
      */
     public function return($transactionId)
-{
-    // Find the borrowing transaction
-    $transaction = BorrowingTransaction::findOrFail($transactionId);
+    {
+        // Find the borrowing transaction
+        $transaction = BorrowingTransaction::findOrFail($transactionId);
 
-    DB::beginTransaction();
-
-    try {
-        // Ensure the status is 'active' before returning the book
+        // Ensure the transaction is currently active and has been borrowed
         if ($transaction->status !== 'active') {
-            return redirect()->route('librarian.welcome')->with('error', 'This transaction is not active.');
+            return redirect()->back()->with('error', 'This transaction is not active or already returned.');
         }
 
-        // Update transaction status to 'returned'
+        // Update the borrowing transaction to reflect the return
         $transaction->status = 'returned';
+        $transaction->return_date = Carbon::now(); // Set the current date as the return date
         $transaction->save();
 
-        // Update the book copy to be available again
-        $transaction->bookCopy->available = true;
-        $transaction->bookCopy->save();
+        // Find the associated request for this transaction
+        $request = $transaction->request;
 
-        // Optionally, you can mark the request as 'returned' if necessary
-        $transaction->request->status = 'returned';
-        $transaction->request->save();
+        if ($request) {
+            // Update the request status to 'returned'
+            $request->status = Requests::STATUS_RETURNED;
+            $request->save();
+        }
 
-        DB::commit();
+        // Mark the associated book copy as available again
+        $bookCopy = BookCopy::findOrFail($transaction->book_id);
+        $bookCopy->available = true;
+        $bookCopy->save();
 
-        return redirect()->route('librarian.welcome')->with('success', 'Book returned successfully! It is now available for borrowing again.');
-    } catch (\Exception $e) {
-        DB::rollBack();
-        \Log::error('Return Book Error: ' . $e->getMessage());
-        return redirect()->back()->withErrors(['error' => 'An error occurred while returning the book.']);
+        return redirect()->route('librarian.welcome')->with('success', 'Book successfully returned.');
     }
-}
+   
 }

@@ -37,6 +37,12 @@ class Requests extends Model
         return $this->belongsTo(BookCopy::class, 'book_copy_id');
     }
 
+    public function transaction()
+{
+    return $this->hasOne(BorrowingTransaction::class);
+}
+
+
     /**
      * Get the student that made the request.
      */

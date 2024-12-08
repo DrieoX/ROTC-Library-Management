@@ -11,28 +11,59 @@ use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\Auth\LoginController;
 use Illuminate\Support\Facades\Route;
 
+
 // Home route
 Route::get('/', [BookController::class, 'welcome'])->name('welcome');
 
-// Librarian routes
-Route::get('/librarian', [BookController::class, 'index'])->name('librarian.welcome');
-Route::get('/librarian/requests/list', [RequestController::class, 'listRequests'])->name('requests.list');
-Route::get('librarian/requests/stats', [RequestController::class, 'stats'])->name('requests.stats');
+
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/requests', [RequestController::class, 'listRequests'])->name('requests.list');
-    Route::post('/requests/{requestId}/approve', [RequestController::class, 'approve'])->name('requests.approve');
-    Route::delete('/requests/{requestId}/deny', [RequestController::class, 'deny'])->name('requests.deny');
-});
+    // Librarian routes
+    Route::get('/librarian', [BookController::class, 'index'])->name('librarian.welcome');
+    Route::get('/librarian/requests/list', [RequestController::class, 'listRequests'])->name('requests.list');
+    Route::get('librarian/requests/stats', [RequestController::class, 'stats'])->name('requests.stats');
 
-// Dashboard routes
-Route::get('/dashboard', [DashboardController::class, 'index'])
+    // Dashboard routes
+    Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
-Route::get('/librarian/dashboard', [DashboardController::class, 'librarianIndex'])
+    Route::get('/librarian/dashboard', [DashboardController::class, 'librarianIndex'])
     ->middleware(['auth', 'verified'])
     ->name('librarian.dashboard');
+
+    // Achievements
+Route::middleware(['auth'])->group(function () {
+    Route::get('/achievements', [AchievementController::class, 'index'])->name('achievements.index');
+});
+
+// Routes for BookController
+Route::get('/books/create', [BookController::class, 'create'])->name('books.create'); // Create book
+Route::post('/books', [BookController::class, 'store'])->name('books.store'); // Store book
+Route::get('/books/{book}/edit', [BookController::class, 'edit'])->name('books.edit'); // Edit book
+Route::put('/books/{book}', [BookController::class, 'update'])->name('books.update'); // Update book
+// routes/web.php
+Route::get('books/{id}/destroy', [BookController::class, 'confirmDelete'])->name('books.confirmDelete');
+Route::delete('books/{id}/destroy', [BookController::class, 'destroy'])->name('books.destroy');
+
+
+// Routes for RequestController
+Route::post('/requests/{bookId}', [RequestController::class, 'store'])->name('requests.store');
+Route::get('/requests/{requestId}/approve', [RequestController::class, 'approve'])->name('requests.approve');
+Route::get('/requests/{requestId}/deny', [RequestController::class, 'deny'])->name('requests.deny');
+
+// Routes for ListController
+Route::get('/books/list', [ListController::class, 'index'])->name('books.list');
+Route::get('/books/search', [ListController::class, 'search'])->name('books.search');
+
+Route::get('fines', [FineController::class, 'index'])->name('fines.index');
+Route::post('fines/pay/{fine}', [FineController::class, 'payFine'])->name('fines.pay');
+
+Route::post('/transactions/{transaction}/return', [BookController::class, 'return'])->name('transactions.return');
+
+
+});
+
 
 // Profile routes
 Route::middleware(['auth', 'no-cache'])->group(function () {
@@ -56,28 +87,3 @@ Route::post('/register/student', [RegisteredUserController::class, 'storeStudent
 Route::get('/register/librarian', [RegisteredUserController::class, 'createLibrarian'])->name('register-librarian');
 Route::post('/register/librarian', [RegisteredUserController::class, 'storeLibrarian'])->name('register-librarian.store');
 
-// Achievements
-Route::middleware(['auth'])->group(function () {
-    Route::get('/achievements', [AchievementController::class, 'index'])->name('achievements.index');
-});
-
-// Routes for BookController
-Route::get('/books/create', [BookController::class, 'create'])->name('books.create'); // Create book
-Route::post('/books', [BookController::class, 'store'])->name('books.store'); // Store book
-Route::get('/books/{book}/edit', [BookController::class, 'edit'])->name('books.edit'); // Edit book
-Route::put('/books/{book}', [BookController::class, 'update'])->name('books.update'); // Update book
-Route::delete('/books/{book}', [BookController::class, 'destroy'])->name('books.destroy'); // Delete book
-
-// Routes for RequestController
-Route::post('/requests/{bookId}', [RequestController::class, 'store'])->name('requests.store');
-Route::get('/requests/{requestId}/approve', [RequestController::class, 'approve'])->name('requests.approve');
-Route::get('/requests/{requestId}/deny', [RequestController::class, 'deny'])->name('requests.deny');
-
-// Routes for ListController
-Route::get('/books/list', [ListController::class, 'index'])->name('books.list');
-Route::get('/books/search', [ListController::class, 'search'])->name('books.search');
-
-Route::get('fines', [FineController::class, 'index'])->name('fines.index');
-Route::post('fines/pay/{fine}', [FineController::class, 'payFine'])->name('fines.pay');
-
-Route::post('/transactions/{transaction}/return', [BookController::class, 'return'])->name('transactions.return');

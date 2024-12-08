@@ -2,8 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -13,11 +11,18 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Run the default user factory if needed
+        // Uncomment the line below if you still need test users
+        // \App\Models\User::factory(10)->create();
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        // Optionally create a default user (optional, not related to achievements)
+
+        // Call additional seeders
+        $this->call([
+            AchievementSeeder::class, // Seeds the Achievements table
         ]);
+
+        // Add other seeders here as needed
+        // Example: $this->call(StudentSeeder::class);
     }
 }

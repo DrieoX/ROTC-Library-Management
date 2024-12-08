@@ -20,7 +20,7 @@
                         <div class="row d-flex align-items-center">
                             <!-- Book Image Section -->
                             <div class="col-md-6">
-                                <img src="{{ asset('storage/covers/' . $book->cover_image) }}" class="d-block w-100" alt="{{ $book->title }}">
+                                <img src="{{ asset('storage/covers/' . $book->cover_image) }}" class="d-block w-100" alt="{{ $book->title }}" style="object-fit: contain; height: auto; max-height: 400px;">
                             </div>
                             <!-- Book Description Section -->
                             <div class="col-md-6">
@@ -59,8 +59,9 @@
 
     /* Book Carousel Styles */
     .carousel-item img {
-        object-fit: cover;
-        max-height: 400px;
+        object-fit: contain; /* Ensure the image is fully visible without cropping */
+        height: auto;
+        max-height: 400px; /* Restrict the height for consistency */
         width: 100%;
         border-radius: 8px;
     }

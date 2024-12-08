@@ -12,11 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('achievements', function (Blueprint $table) {
-            $table->id();
-            $table->string('title');
-            $table->text('description')->nullable();
-            $table->timestamps();
-        });
+            $table->id(); // Primary key
+            $table->string('title')->unique(); // Make title unique to prevent duplicate achievements
+            $table->text('description')->nullable(); // Nullable description
+            $table->enum('type', ['first', 'milestone', 'special'])->default('milestone'); // Optional: categorize achievements
+            $table->timestamps(); // Timestamps
+        });        
     
     }
 

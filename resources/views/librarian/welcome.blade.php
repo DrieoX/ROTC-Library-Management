@@ -33,11 +33,10 @@
                         <td>{{ $book->copies->count() }}</td>
                         <td>
                             <a href="{{ route('books.edit', $book->id) }}" class="btn btn-warning">Edit</a>
-                            <form action="{{ route('books.destroy', $book->id) }}" method="POST" style="display:inline;">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-danger">Delete</button>
-                            </form>
+                            <!-- Link to the deletion confirmation page -->
+                            <a href="{{ route('books.confirmDelete', $book->id) }}" class="btn btn-danger">
+                                Delete
+                            </a>
                         </td>
                     </tr>
                 @endforeach

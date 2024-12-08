@@ -17,9 +17,21 @@ class BookCopy extends Model
         return $this->belongsTo(Book::class);
     }
 
+    // Define the relationship with borrowing transactions
+    public function borrowingTransactions()
+    {
+        return $this->hasMany(BorrowingTransaction::class);
+    }
+
     // Define the relationship with requests
     public function requests()
     {
         return $this->hasMany(Requests::class, 'book_copy_id');
+    }
+
+    // Scope to find available book copies
+    public function scopeAvailable($query)
+    {
+        return $query->where('available', true); // Assumes boolean for available
     }
 }
