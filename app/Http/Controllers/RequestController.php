@@ -7,6 +7,9 @@ use App\Models\BookCopy;
 use App\Models\Requests;
 use App\Models\BorrowingTransaction;
 use App\Models\Achievement;
+use App\Events\BookRequested;
+use App\Events\RequestReviewed;
+use App\Events\BookBorrowed; // Add this import for the event
 use Illuminate\Http\Request as HttpRequest;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -39,11 +42,22 @@ class RequestController extends Controller
         }
 
         // Create the request (only student_id, book_copy_id, and status)
-        Requests::create([
+        $request = Requests::create([
             'student_id' => Auth::user()->student ? Auth::user()->student->id : null, // Ensure student_id is correct
             'book_copy_id' => $bookCopy->id, // Store the book copy ID in the request
             'status' => 'pending', // Initial status is pending
         ]);
+
+        // Dispatch the event for requesting a book
+        event(new BookRequested($request));
+
+        // Assign "Request a Book" achievement
+        $student = $request->student;
+        $requestAchievement = Achievement::where('title', 'Request a Book')->first();
+
+        if ($requestAchievement && !$student->achievements->contains($requestAchievement->id)) {
+            $student->achievements()->attach($requestAchievement->id, ['notified' => false]);
+        }
 
         return redirect()->route('books.list')->with('success', 'Your request has been submitted.');
     }
@@ -100,7 +114,20 @@ class RequestController extends Controller
 
             if ($firstBorrowAchievement && !$student->achievements->contains($firstBorrowAchievement->id)) {
                 $student->achievements()->attach($firstBorrowAchievement->id, ['notified' => false]);
+
+                // Dispatch the BookBorrowed event to trigger any further actions like achievement notification
+                event(new BookBorrowed($student)); // Dispatch the event for first borrow
             }
+        }
+
+        // Dispatch the event for the book request being approved
+        event(new RequestReviewed($request, 'approved'));
+
+        // Assign "Book Request Reviewed" achievement when request is approved
+        $reviewedAchievement = Achievement::where('title', 'Book Request Reviewed')->first();
+
+        if ($reviewedAchievement && !$student->achievements->contains($reviewedAchievement->id)) {
+            $student->achievements()->attach($reviewedAchievement->id, ['notified' => false]);
         }
 
         return redirect()->route('librarian.welcome')->with('success', 'Request approved successfully.');
@@ -120,6 +147,17 @@ class RequestController extends Controller
 
         $request->status = 'rejected';
         $request->save();
+
+        // Dispatch the event for the book request being denied
+        event(new RequestReviewed($request, 'denied'));
+
+        // Assign "Book Request Reviewed" achievement when request is denied
+        $student = $request->student;
+        $reviewedAchievement = Achievement::where('title', 'Book Request Reviewed')->first();
+
+        if ($reviewedAchievement && !$student->achievements->contains($reviewedAchievement->id)) {
+            $student->achievements()->attach($reviewedAchievement->id, ['notified' => false]);
+        }
 
         return redirect()->route('librarian.welcome')->with('success', 'Request denied successfully.');
     }

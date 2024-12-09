@@ -16,6 +16,14 @@ class EventServiceProvider extends ServiceProvider
         \App\Events\BookBorrowed::class => [
             \App\Listeners\FirstBorrowAchievementListener::class,
         ],
+
+        \App\Events\BookRequested::class => [
+            \App\Listeners\AwardAchievementForBookRequest::class,
+        ],
+        
+        \App\Events\RequestReviewed::class => [
+            \App\Listeners\AwardAchievementForRequestReview::class,
+        ],
         // Add more events and listeners here if needed
     ];
 
