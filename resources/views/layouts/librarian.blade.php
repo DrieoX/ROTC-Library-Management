@@ -9,7 +9,7 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f0f0f0; /* No background image */
+            background-color: #f0f0f0;
             margin: 0;
             display: flex;
             flex-direction: column;
@@ -22,7 +22,7 @@
             justify-content: space-between;
             align-items: center;
             padding: 10px 20px;
-            background-color: rgba(0, 0, 0, 0.8);
+            background-color: rgba(0, 0, 0, 1);
             color: white;
             position: relative;
         }
@@ -67,7 +67,7 @@
         }
 
         .footer {
-            background-color: rgba(0, 0, 0, 0.8);
+            background-color: rgba(0, 0, 0, 1);
             color: white;
             text-align: center;
             padding: 10px 0;

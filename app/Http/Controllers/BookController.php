@@ -170,40 +170,4 @@ public function confirmDelete($id)
     return view('books.destroy', compact('book'));
 }
 
-
-    /**
-     * Return a borrowed book.
-     */
-    public function return($transactionId)
-    {
-        // Find the borrowing transaction
-        $transaction = BorrowingTransaction::findOrFail($transactionId);
-
-        // Ensure the transaction is currently active and has been borrowed
-        if ($transaction->status !== 'active') {
-            return redirect()->back()->with('error', 'This transaction is not active or already returned.');
-        }
-
-        // Update the borrowing transaction to reflect the return
-        $transaction->status = 'returned';
-        $transaction->return_date = Carbon::now(); // Set the current date as the return date
-        $transaction->save();
-
-        // Find the associated request for this transaction
-        $request = $transaction->request;
-
-        if ($request) {
-            // Update the request status to 'returned'
-            $request->status = Requests::STATUS_RETURNED;
-            $request->save();
-        }
-
-        // Mark the associated book copy as available again
-        $bookCopy = BookCopy::findOrFail($transaction->book_id);
-        $bookCopy->available = true;
-        $bookCopy->save();
-
-        return redirect()->route('librarian.welcome')->with('success', 'Book successfully returned.');
-    }
-   
 }

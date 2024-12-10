@@ -76,5 +76,6 @@ class Kernel extends HttpKernel
     {
         // Schedule tasks here, e.g., run every day at midnight
         $schedule->job(\App\Jobs\CheckOverdueTransactions::class)->daily();
+        $schedule->command('transactions:update-overdue')->daily(); // Run it daily
     }
 }

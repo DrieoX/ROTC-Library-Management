@@ -41,10 +41,13 @@ class LoginController extends Controller
             $isLibrarian = Librarian::where('user_id', $user->id)->exists();
 
             if ($isStudent) {
-                return redirect()->intended('/'); // Redirect to student's homepage
+                // Redirect to the student's homepage
+                return redirect()->intended(route('dashboard')); // Replace with actual route
             } elseif ($isLibrarian) {
-                return redirect()->intended('/librarian'); // Redirect to librarian's homepage
+                // Redirect to the librarian's homepage
+                return redirect()->intended(route('librarian.dashboard')); // Replace with actual route
             } else {
+                // If the user does not belong to either group, log them out and show error
                 Auth::logout();
                 return back()->withErrors([
                     'email' => 'Your account is not associated with a valid student or librarian record.',

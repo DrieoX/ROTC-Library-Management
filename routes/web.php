@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\Auth\RegisteredUserController;
-use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\RequestController;
@@ -51,25 +50,23 @@ Route::delete('books/{id}/destroy', [BookController::class, 'destroy'])->name('b
 Route::post('/requests/{bookId}', [RequestController::class, 'store'])->name('requests.store');
 Route::get('/requests/{requestId}/approve', [RequestController::class, 'approve'])->name('requests.approve');
 Route::get('/requests/{requestId}/deny', [RequestController::class, 'deny'])->name('requests.deny');
+Route::post('/requests/{transaction}/return', [RequestController::class, 'return'])->name('requests.return');
 
-// Routes for ListController
-Route::get('/books/list', [ListController::class, 'index'])->name('books.list');
-Route::get('/books/search', [ListController::class, 'search'])->name('books.search');
-
-Route::get('fines', [FineController::class, 'index'])->name('fines.index');
-Route::post('fines/pay/{fine}', [FineController::class, 'payFine'])->name('fines.pay');
-
-Route::post('/transactions/{transaction}/return', [BookController::class, 'return'])->name('transactions.return');
-
+Route::get('/fines', [FineController::class, 'index'])->name('fines.index');
+Route::post('/fines/pay/{id}', [FineController::class, 'payFine'])->name('fines.pay');
+Route::get('/transactions/{transaction}/confirm', [FineController::class, 'confirmPayment'])->name('transactions.confirm');
+Route::get('/transactions', [FineController::class, 'index'])->name('transactions.index');
 
 });
 
 
 // Profile routes
-Route::middleware(['auth', 'no-cache'])->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+Route::middleware(['auth'])->group(function () {
+    Route::get('/profile', [DashboardController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [DashboardController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [DashboardController::class, 'destroy'])->name('profile.destroy');
+    Route::match(['put', 'patch'], '/password', [DashboardController::class, 'updatePassword'])->name('password.update');
+
 });
 
 // Authentication routes
@@ -86,4 +83,8 @@ Route::post('/register/student', [RegisteredUserController::class, 'storeStudent
 // Librarian registration routes
 Route::get('/register/librarian', [RegisteredUserController::class, 'createLibrarian'])->name('register-librarian');
 Route::post('/register/librarian', [RegisteredUserController::class, 'storeLibrarian'])->name('register-librarian.store');
+
+// Routes for ListController
+Route::get('/books/list', [ListController::class, 'index'])->name('books.list');
+Route::get('/books/search', [ListController::class, 'search'])->name('books.search');
 

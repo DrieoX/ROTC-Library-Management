@@ -11,14 +11,16 @@
         @foreach($allAchievements as $achievement)
             <div class="col-md-4">
                 <div class="achievement-item card 
-                    {{ $achievements->contains($achievement) ? 'border-success' : 'border-secondary' }}">
+                    {{ $achievements->contains('id', $achievement->id) ? 'border-success achieved' : 'border-secondary not-achieved' }}">
+
                     <div class="card-body">
                         <h5 class="card-title">{{ $achievement->title }}</h5>
                         <p class="card-text">{{ $achievement->description }}</p>
-                        @if($achievements->contains($achievement))
-                            <small class="text-success">Achieved on: {{ $achievement->pivot->created_at->format('F d, Y') }}</small>
+
+                        @if($achievements->contains('id', $achievement->id))
+                            <small class="text-success">Achieved</small>
                         @else
-                            <small class="text-muted">Not yet achieved</small>
+                            <small class="text-danger">Not yet achieved</small>
                         @endif
                     </div>
                 </div>
@@ -27,7 +29,6 @@
     </div>
 </div>
 @endsection
-
 
 <style>
     /* Add these styles in your main CSS file or inside a <style> block in the app.blade.php file */

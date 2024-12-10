@@ -40,7 +40,7 @@ class User extends Authenticatable
      */
     public function student()
     {
-        return $this->hasOne(Student::class);
+        return $this->hasOne(Student::class, 'user_id');
     }
 
     /**
@@ -66,4 +66,11 @@ class User extends Authenticatable
     {
         return $this->librarian()->exists();
     }
+
+    public function achievements()
+{
+    return $this->belongsToMany(Achievement::class, 'achievement_student', 'student_id', 'achievement_id')
+                ->withPivot('notified');
+}
+
 }

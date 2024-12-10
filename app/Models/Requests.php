@@ -39,7 +39,7 @@ class Requests extends Model
 
     public function transaction()
 {
-    return $this->hasOne(BorrowingTransaction::class);
+    return $this->hasOne(BorrowingTransaction::class, 'book_id', 'book_copy_id');
 }
 
 

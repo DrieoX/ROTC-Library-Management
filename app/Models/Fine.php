@@ -6,13 +6,19 @@ use Illuminate\Database\Eloquent\Model;
 
 class Fine extends Model
 {
-    // Define the relationship with the BorrowingTransaction model
+    protected $fillable = ['transaction_id', 'student_id', 'fine_amount', 'fine_date', 'payment_status'];
+
+    /**
+     * Relationship with BorrowingTransaction
+     */
     public function borrowingTransaction()
     {
         return $this->belongsTo(BorrowingTransaction::class, 'transaction_id');
     }
 
-    // Define the relationship with the Student model
+    /**
+     * Relationship with Student
+     */
     public function student()
     {
         return $this->belongsTo(Student::class, 'student_id');

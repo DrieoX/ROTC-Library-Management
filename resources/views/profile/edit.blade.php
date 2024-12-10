@@ -1,29 +1,34 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            {{ __('Profile') }}
-        </h2>
-    </x-slot>
+@extends('layouts.app')
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            <div class="p-4 sm:p-8 bg-white dark:bg-gray-800 shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.update-profile-information-form')
-                </div>
-            </div>
+@section('title', 'Edit Profile')
 
-            <div class="p-4 sm:p-8 bg-white dark:bg-gray-800 shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.update-password-form')
-                </div>
-            </div>
-
-            <div class="p-4 sm:p-8 bg-white dark:bg-gray-800 shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.delete-user-form')
-                </div>
-            </div>
+@section('content')
+<div class="dashboard-container">
+    <h1>Edit Profile</h1>
+    <form method="POST" action="{{ route('profile.update') }}">
+        @csrf
+        @method('PATCH')
+        <div>
+            <label for="first_name">First Name</label>
+            <input type="text" id="first_name" name="first_name" value="{{ $user->first_name }}" required>
         </div>
-    </div>
-</x-app-layout>
+        <div>
+            <label for="last_name">Last Name</label>
+            <input type="text" id="last_name" name="last_name" value="{{ $user->last_name }}" required>
+        </div>
+        <div>
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" value="{{ $user->email }}" required>
+        </div>
+        <div>
+            <button type="submit" class="update-button">Update Profile</button>
+        </div>
+    </form>
+
+    <form method="POST" action="{{ route('profile.destroy') }}" onsubmit="return confirm('Are you sure you want to delete your account?');">
+        @csrf
+        @method('DELETE')
+        <button type="submit" class="delete-button">Delete Account</button>
+    </form>
+</div>
+@endsection

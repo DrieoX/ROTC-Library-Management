@@ -12,9 +12,11 @@ class Achievement extends Model
     protected $fillable = ['title', 'description'];
 
     public function students()
-    {
-        return $this->belongsToMany(Student::class, 'achievement_student');
-    }
+{
+    return $this->belongsToMany(Student::class, 'achievement_student')
+                ->withPivot('notified')
+                ->withTimestamps(); // Include pivot table timestamps
+}
 
 }
 

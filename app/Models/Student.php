@@ -20,13 +20,21 @@ class Student extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
+
+    public function requests()
+    {
+    return $this->hasMany(Requests::class, 'student_id');
+    }
+
 
     // app/Models/Student.php
 
     public function achievements()
     {
-    return $this->belongsToMany(Achievement::class, 'achievement_student');
+        return $this->belongsToMany(Student::class, 'achievement_student')
+                    ->withPivot('notified')
+                    ->withTimestamps(); // Include pivot table timestamps
     }
 }
